@@ -8,4 +8,8 @@ struct ShelfActions {
     let clearFiles: () -> Void
     let openFile: (ShelfItem) -> Void
     let revealFile: (ShelfItem) -> Void
+    let spotifyPlayPause: () -> Void
+    let spotifyPrevious: () -> Void
+    let spotifyNext: () -> Void
+    let spotifyOpen: () -> Void
 }

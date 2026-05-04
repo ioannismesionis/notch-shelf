@@ -9,6 +9,7 @@ This project does not copy NotchNook's branding, assets, or UI. It starts with a
 - Expandable utility surface
 - Menu bar status item
 - Multi-screen repositioning
+- Spotify artwork and playback controls
 - Clipboard and active-app widgets
 - Drag-and-drop file shelf
 
@@ -33,10 +34,20 @@ swift run NotchShelf
 
 The app runs as an accessory app. Use the menu bar icon to expand, collapse, clear shelf files, or quit.
 
+## Spotify Widget
+
+The Spotify widget talks to the local Spotify desktop app with macOS Apple Events. The first time you use playback controls or read current track metadata, macOS may ask for Automation permission.
+
+If permission is denied, allow access in:
+
+```text
+System Settings > Privacy & Security > Automation
+```
+
 ## Next Build Steps
 
 - Add launch-at-login support
-- Add real media controls
+- Add Apple Music / system Now Playing support
 - Add keyboard shortcut support
 - Add settings storage
 - Package as a signed `.app`/`.dmg`

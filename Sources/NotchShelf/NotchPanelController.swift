@@ -10,8 +10,8 @@ final class NotchPanelController: NSObject {
     private var collapseTimer: Timer?
     private var refreshTimer: Timer?
 
-    private let collapsedSize = CGSize(width: 226, height: 38)
-    private let expandedSize = CGSize(width: 472, height: 326)
+    private let collapsedSize = CGSize(width: 310, height: 38)
+    private let expandedSize = CGSize(width: 520, height: 430)
 
     override init() {
         panel = NotchPanel(
@@ -98,7 +98,11 @@ final class NotchPanelController: NSObject {
             addFiles: { [weak self] urls in self?.store.addFiles(urls) },
             clearFiles: { [weak self] in self?.store.clearFiles() },
             openFile: { [weak self] item in self?.open(item) },
-            revealFile: { [weak self] item in self?.reveal(item) }
+            revealFile: { [weak self] item in self?.reveal(item) },
+            spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
+            spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
+            spotifyNext: { [weak self] in self?.store.spotifyNext() },
+            spotifyOpen: { [weak self] in self?.store.openSpotify() }
         )
 
         panel.contentView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))

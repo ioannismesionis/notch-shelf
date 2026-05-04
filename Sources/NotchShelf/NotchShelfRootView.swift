@@ -36,14 +36,33 @@ private struct CollapsedPillView: View {
     var body: some View {
         Button(action: actions.toggleExpanded) {
             HStack(spacing: 9) {
-                Image(systemName: "rectangle.topthird.inset.filled")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                if let track = store.spotifyStatus.track {
+                    AlbumArtworkView(track: track)
+                        .frame(width: 24, height: 24)
 
-                Text(store.isPinned ? "NotchShelf pinned" : "NotchShelf")
-                    .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(track.title)
+                            .font(.system(size: 12, weight: .bold))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+
+                        Text(track.playbackState.isPlaying ? track.artist : "Paused")
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .foregroundStyle(.white.opacity(0.58))
+                    }
                     .foregroundStyle(.white)
+                } else {
+                    Image(systemName: "rectangle.topthird.inset.filled")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+
+                    Text(store.isPinned ? "NotchShelf pinned" : "NotchShelf")
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                        .foregroundStyle(.white)
+                }
 
                 if !store.files.isEmpty {
                     Text("\(store.files.count)")
@@ -74,6 +93,8 @@ private struct ExpandedShelfView: View {
     var body: some View {
         VStack(spacing: 13) {
             header
+
+            SpotifyWidgetView(status: store.spotifyStatus, actions: actions)
 
             LazyVGrid(columns: columns, spacing: 10) {
                 InfoTile(

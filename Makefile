@@ -8,7 +8,7 @@ SOURCES := $(shell find Sources/NotchShelf -name '*.swift' | sort)
 
 build:
 	mkdir -p $(BUILD_DIR)
-	swiftc -target $(MACOS_TARGET) -parse-as-library $(SOURCES) -o $(BINARY)
+	swiftc -swift-version 5 -target $(MACOS_TARGET) -parse-as-library $(SOURCES) -o $(BINARY)
 
 run: build
 	$(BINARY)
