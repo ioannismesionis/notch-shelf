@@ -12,6 +12,7 @@ final class NotchPanelController: NSObject {
     private var refreshTimer: Timer?
     private var pointerTrackingTimer: Timer?
     private var isHidingPanel = false
+    private var suppressAutoShowUntilPointerExit = false
 
     private let collapsedSize = CGSize(width: 310, height: 38)
     private let expandedWidth: CGFloat = 520
@@ -59,8 +60,19 @@ final class NotchPanelController: NSObject {
     }
 
     func collapse() {
-        guard !store.isPinned else { return }
+        collapseTimer?.invalidate()
+        if store.isPinned {
+            store.isPinned = false
+            settings.startPinned = false
+        }
+
         store.isExpanded = false
+
+        if settings.autoShowOnTopHover {
+            suppressAutoShowUntilPointerExit = true
+            updateFrame(animated: true)
+            hidePanel(animated: true)
+        }
     }
 
     func setHovering(_ isHovering: Bool) {
@@ -228,7 +240,18 @@ final class NotchPanelController: NSObject {
 
         let pointer = NSEvent.mouseLocation
         let screen = screen(containing: pointer)
-        let shouldShow = topHoverTriggerRect(for: screen).contains(pointer) || panel.frame.insetBy(dx: -8, dy: -8).contains(pointer)
+        let isInTriggerZone = topHoverTriggerRect(for: screen).contains(pointer)
+        let isInPanelZone = panel.frame.insetBy(dx: -8, dy: -8).contains(pointer)
+
+        if suppressAutoShowUntilPointerExit {
+            if isInTriggerZone || isInPanelZone {
+                return
+            }
+
+            suppressAutoShowUntilPointerExit = false
+        }
+
+        let shouldShow = isInTriggerZone || isInPanelZone
 
         if shouldShow {
             ensurePanelVisible(animated: true)
