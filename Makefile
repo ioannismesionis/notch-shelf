@@ -11,10 +11,12 @@ TMP_APP_CONTENTS := $(TMP_APP_BUNDLE)/Contents
 TMP_APP_MACOS := $(TMP_APP_CONTENTS)/MacOS
 TMP_APP_RESOURCES := $(TMP_APP_CONTENTS)/Resources
 INFO_PLIST := Packaging/Info.plist
+INSTALL_DIR ?= /Applications
+INSTALLED_APP := $(INSTALL_DIR)/$(APP_NAME).app
 MACOS_TARGET ?= arm64-apple-macosx14.0
 SOURCES := $(shell find Sources/NotchShelf -name '*.swift' | sort)
 
-.PHONY: build build-app verify-app run run-app clean
+.PHONY: build build-app verify-app run run-app stop restart-app install-app open-installed-app clean
 
 build:
 	mkdir -p $(BUILD_DIR)
@@ -40,6 +42,27 @@ run: build
 
 run-app: build-app
 	open $(APP_BUNDLE)
+
+stop:
+	@if pgrep -x $(APP_NAME) >/dev/null; then \
+		pkill -x $(APP_NAME); \
+		sleep 0.4; \
+		echo "Stopped $(APP_NAME)."; \
+	else \
+		echo "$(APP_NAME) is not running."; \
+	fi
+
+restart-app: stop run-app
+
+install-app: build-app stop
+	rm -rf "$(INSTALLED_APP)"
+	ditto --noextattr --norsrc "$(APP_BUNDLE)" "$(INSTALLED_APP)"
+	/usr/bin/xattr -cr "$(INSTALLED_APP)"
+	codesign --verify --deep "$(INSTALLED_APP)"
+	@echo "Installed $(INSTALLED_APP)"
+
+open-installed-app: install-app
+	open "$(INSTALLED_APP)"
 
 clean:
 	rm -rf .build

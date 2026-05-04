@@ -39,6 +39,30 @@ Verify the generated app bundle:
 make verify-app
 ```
 
+Stop a running NotchShelf instance:
+
+```bash
+make stop
+```
+
+Rebuild and relaunch the app bundle:
+
+```bash
+make restart-app
+```
+
+Install the app into `/Applications`:
+
+```bash
+make install-app
+```
+
+Install and open the `/Applications` copy:
+
+```bash
+make open-installed-app
+```
+
 The app bundle is written to:
 
 ```text
