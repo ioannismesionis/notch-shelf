@@ -11,13 +11,19 @@ final class ShelfStore: ObservableObject {
     @Published var spotifyStatus = SpotifyStatus.notRunning
     @Published var calendarStatus = CalendarStatus.permissionNeeded
 
+    private let settings: AppSettings
     private let spotifyController = SpotifyController()
     private let calendarController = CalendarController()
     private var artworkCache: [String: NSImage] = [:]
     private var artworkURLInFlight: String?
     private var lastCalendarRefresh = Date.distantPast
 
-    func refresh() {
+    init(settings: AppSettings = .shared) {
+        self.settings = settings
+        isPinned = settings.startPinned
+    }
+
+    func refresh(forceCalendar: Bool = false) {
         activeApplicationName = NSWorkspace.shared.frontmostApplication?.localizedName ?? "No active app"
 
         let rawClipboard = NSPasteboard.general.string(forType: .string) ?? ""
@@ -33,8 +39,13 @@ final class ShelfStore: ObservableObject {
             clipboardPreview = trimmedClipboard
         }
 
-        refreshSpotify()
-        refreshCalendar()
+        if settings.showSpotifyWidget {
+            refreshSpotify()
+        }
+
+        if settings.showCalendarWidget {
+            refreshCalendar(force: forceCalendar)
+        }
     }
 
     func addFiles(_ urls: [URL]) {
@@ -73,7 +84,7 @@ final class ShelfStore: ObservableObject {
     func requestCalendarAccess() {
         calendarStatus = CalendarStatus(availability: .loading, event: nil)
 
-        calendarController.requestAccess { [weak self] status in
+        calendarController.requestAccess(lookaheadDays: settings.calendarLookaheadDays) { [weak self] status in
             DispatchQueue.main.async {
                 self?.calendarStatus = status
                 self?.lastCalendarRefresh = Date()
@@ -157,7 +168,7 @@ final class ShelfStore: ObservableObject {
         }
 
         lastCalendarRefresh = now
-        calendarStatus = calendarController.currentStatus()
+        calendarStatus = calendarController.currentStatus(lookaheadDays: settings.calendarLookaheadDays)
     }
 }
 

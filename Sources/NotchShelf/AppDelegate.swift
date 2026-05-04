@@ -3,6 +3,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var panelController: NotchPanelController?
+    private var preferencesWindowController: PreferencesWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let controller = NotchPanelController()
@@ -24,6 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Expand NotchShelf", action: #selector(expand), keyEquivalent: "e"))
         menu.addItem(NSMenuItem(title: "Collapse NotchShelf", action: #selector(collapse), keyEquivalent: "c"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Preferences...", action: #selector(showPreferences), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Clear File Shelf", action: #selector(clearShelf), keyEquivalent: "k"))
         menu.addItem(NSMenuItem.separator())
@@ -48,6 +51,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func clearShelf() {
         panelController?.store.clearFiles()
+    }
+
+    @objc private func showPreferences() {
+        if preferencesWindowController == nil {
+            preferencesWindowController = PreferencesWindowController(settings: .shared)
+        }
+
+        preferencesWindowController?.show()
     }
 
     @objc private func quit() {

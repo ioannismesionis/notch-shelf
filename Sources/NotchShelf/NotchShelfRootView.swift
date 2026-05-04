@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct NotchShelfRootView: View {
     @ObservedObject var store: ShelfStore
+    @ObservedObject var settings: AppSettings
     let actions: ShelfActions
 
     var body: some View {
@@ -11,10 +12,10 @@ struct NotchShelfRootView: View {
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
 
             if store.isExpanded {
-                ExpandedShelfView(store: store, actions: actions)
+                ExpandedShelfView(store: store, settings: settings, actions: actions)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
-                CollapsedPillView(store: store, actions: actions)
+                CollapsedPillView(store: store, settings: settings, actions: actions)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
@@ -31,12 +32,13 @@ struct NotchShelfRootView: View {
 
 private struct CollapsedPillView: View {
     @ObservedObject var store: ShelfStore
+    @ObservedObject var settings: AppSettings
     let actions: ShelfActions
 
     var body: some View {
         Button(action: actions.toggleExpanded) {
             HStack(spacing: 9) {
-                if let track = store.spotifyStatus.track {
+                if settings.showSpotifyWidget, let track = store.spotifyStatus.track {
                     AlbumArtworkView(track: track)
                         .frame(width: 24, height: 24)
 
@@ -64,7 +66,7 @@ private struct CollapsedPillView: View {
                         .foregroundStyle(.white)
                 }
 
-                if !store.files.isEmpty {
+                if settings.showFileShelf, !store.files.isEmpty {
                     Text("\(store.files.count)")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.black)
@@ -82,6 +84,7 @@ private struct CollapsedPillView: View {
 
 private struct ExpandedShelfView: View {
     @ObservedObject var store: ShelfStore
+    @ObservedObject var settings: AppSettings
     let actions: ShelfActions
     @State private var isDropTarget = false
 
@@ -94,36 +97,45 @@ private struct ExpandedShelfView: View {
         VStack(spacing: 13) {
             header
 
-            SpotifyWidgetView(status: store.spotifyStatus, actions: actions)
-            CalendarWidgetView(status: store.calendarStatus, actions: actions)
-
-            LazyVGrid(columns: columns, spacing: 10) {
-                InfoTile(
-                    icon: "app.connected.to.app.below.fill",
-                    title: "Active",
-                    value: store.activeApplicationName
-                )
-
-                InfoTile(
-                    icon: "display",
-                    title: "Display",
-                    value: store.currentScreenName
-                )
-
-                InfoTile(
-                    icon: "doc.on.clipboard",
-                    title: "Clipboard",
-                    value: store.clipboardPreview
-                )
-
-                InfoTile(
-                    icon: "clock",
-                    title: "Now",
-                    value: Date.now.formatted(date: .omitted, time: .shortened)
-                )
+            if settings.showSpotifyWidget {
+                SpotifyWidgetView(status: store.spotifyStatus, actions: actions)
             }
 
-            fileShelf
+            if settings.showCalendarWidget {
+                CalendarWidgetView(status: store.calendarStatus, actions: actions)
+            }
+
+            if settings.showInfoTiles {
+                LazyVGrid(columns: columns, spacing: 10) {
+                    InfoTile(
+                        icon: "app.connected.to.app.below.fill",
+                        title: "Active",
+                        value: store.activeApplicationName
+                    )
+
+                    InfoTile(
+                        icon: "display",
+                        title: "Display",
+                        value: store.currentScreenName
+                    )
+
+                    InfoTile(
+                        icon: "doc.on.clipboard",
+                        title: "Clipboard",
+                        value: store.clipboardPreview
+                    )
+
+                    InfoTile(
+                        icon: "clock",
+                        title: "Now",
+                        value: Date.now.formatted(date: .omitted, time: .shortened)
+                    )
+                }
+            }
+
+            if settings.showFileShelf {
+                fileShelf
+            }
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)

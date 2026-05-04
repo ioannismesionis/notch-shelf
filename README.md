@@ -85,6 +85,21 @@ swift run NotchShelf
 
 The app runs as an accessory app. Use the menu bar icon to expand, collapse, clear shelf files, or quit.
 
+## Preferences
+
+Use the menu bar item to open Preferences. Settings are stored in `UserDefaults`.
+
+Current controls:
+
+- Spotify widget
+- Calendar widget
+- Info tiles
+- File shelf
+- Start pinned
+- Collapse after hover
+- Refresh interval
+- Calendar lookahead
+
 ## Spotify Widget
 
 The Spotify widget talks to the local Spotify desktop app with macOS Apple Events. The first time you use playback controls or read current track metadata, macOS may ask for Automation permission.

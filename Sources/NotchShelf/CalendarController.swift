@@ -6,7 +6,7 @@ final class CalendarController {
     private let eventStore = EKEventStore()
     private let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 
-    func currentStatus() -> CalendarStatus {
+    func currentStatus(lookaheadDays: Int) -> CalendarStatus {
         switch EKEventStore.authorizationStatus(for: .event) {
         case .notDetermined:
             return .permissionNeeded
@@ -15,7 +15,7 @@ final class CalendarController {
         case .restricted:
             return .restricted
         case .authorized, .fullAccess:
-            return upcomingEventStatus()
+            return upcomingEventStatus(lookaheadDays: lookaheadDays)
         case .writeOnly:
             return .permissionDenied
         @unknown default:
@@ -23,7 +23,7 @@ final class CalendarController {
         }
     }
 
-    func requestAccess(completion: @escaping (CalendarStatus) -> Void) {
+    func requestAccess(lookaheadDays: Int, completion: @escaping (CalendarStatus) -> Void) {
         eventStore.requestFullAccessToEvents { [weak self] granted, error in
             if let error {
                 completion(CalendarStatus(availability: .error(error.localizedDescription), event: nil))
@@ -35,7 +35,7 @@ final class CalendarController {
                 return
             }
 
-            completion(self.upcomingEventStatus())
+            completion(self.upcomingEventStatus(lookaheadDays: lookaheadDays))
         }
     }
 
@@ -45,10 +45,10 @@ final class CalendarController {
         }
     }
 
-    private func upcomingEventStatus() -> CalendarStatus {
+    private func upcomingEventStatus(lookaheadDays: Int) -> CalendarStatus {
         let now = Date()
         let searchStart = Calendar.current.date(byAdding: .hour, value: -6, to: now) ?? now
-        let searchEnd = Calendar.current.date(byAdding: .day, value: 7, to: now) ?? now
+        let searchEnd = Calendar.current.date(byAdding: .day, value: lookaheadDays, to: now) ?? now
         let predicate = eventStore.predicateForEvents(withStart: searchStart, end: searchEnd, calendars: nil)
 
         let event = eventStore.events(matching: predicate)
