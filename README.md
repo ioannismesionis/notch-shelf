@@ -20,7 +20,31 @@ This project does not copy NotchNook's branding, assets, or UI. It starts with a
 
 ## Run Locally
 
-The direct compiler path is currently the most reliable option on this machine:
+Build and launch the macOS app bundle:
+
+```bash
+make run-app
+```
+
+Build the app bundle without launching it:
+
+```bash
+make build-app
+```
+
+Verify the generated app bundle:
+
+```bash
+make verify-app
+```
+
+The app bundle is written to:
+
+```text
+.build/debug/NotchShelf.app
+```
+
+The direct executable path is also available:
 
 ```bash
 make run
