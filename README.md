@@ -44,6 +44,8 @@ The app bundle is written to:
 .build/debug/NotchShelf.app
 ```
 
+The bundle is assembled and signed in `/private/tmp` first, then copied into `.build`. This avoids macOS `codesign` failures caused by File Provider or Finder metadata in `Documents` folders.
+
 The direct executable path is also available:
 
 ```bash
