@@ -12,4 +12,7 @@ struct ShelfActions {
     let spotifyPrevious: () -> Void
     let spotifyNext: () -> Void
     let spotifyOpen: () -> Void
+    let calendarRequestAccess: () -> Void
+    let calendarOpenEvent: (CalendarEvent) -> Void
+    let calendarOpenApp: () -> Void
 }

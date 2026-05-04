@@ -10,6 +10,7 @@ This project does not copy NotchNook's branding, assets, or UI. It starts with a
 - Menu bar status item
 - Multi-screen repositioning
 - Spotify artwork and playback controls
+- Calendar next-event widget with meeting links
 - Clipboard and active-app widgets
 - Drag-and-drop file shelf
 
@@ -68,6 +69,16 @@ If permission is denied, allow access in:
 
 ```text
 System Settings > Privacy & Security > Automation
+```
+
+## Calendar Widget
+
+The Calendar widget uses EventKit to show your next upcoming event. Use the widget's allow button to grant access when macOS asks for Calendar permission.
+
+If permission is denied, allow access in:
+
+```text
+System Settings > Privacy & Security > Calendars
 ```
 
 ## Next Build Steps

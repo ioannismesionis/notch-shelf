@@ -95,6 +95,7 @@ private struct ExpandedShelfView: View {
             header
 
             SpotifyWidgetView(status: store.spotifyStatus, actions: actions)
+            CalendarWidgetView(status: store.calendarStatus, actions: actions)
 
             LazyVGrid(columns: columns, spacing: 10) {
                 InfoTile(

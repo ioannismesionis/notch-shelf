@@ -11,7 +11,7 @@ final class NotchPanelController: NSObject {
     private var refreshTimer: Timer?
 
     private let collapsedSize = CGSize(width: 310, height: 38)
-    private let expandedSize = CGSize(width: 520, height: 430)
+    private let expandedSize = CGSize(width: 520, height: 532)
 
     override init() {
         panel = NotchPanel(
@@ -102,7 +102,10 @@ final class NotchPanelController: NSObject {
             spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
             spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
             spotifyNext: { [weak self] in self?.store.spotifyNext() },
-            spotifyOpen: { [weak self] in self?.store.openSpotify() }
+            spotifyOpen: { [weak self] in self?.store.openSpotify() },
+            calendarRequestAccess: { [weak self] in self?.store.requestCalendarAccess() },
+            calendarOpenEvent: { [weak self] event in self?.store.openCalendarEvent(event) },
+            calendarOpenApp: { [weak self] in self?.store.openCalendarApp() }
         )
 
         panel.contentView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))

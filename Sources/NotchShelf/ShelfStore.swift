@@ -9,10 +9,13 @@ final class ShelfStore: ObservableObject {
     @Published var activeApplicationName = "No active app"
     @Published var currentScreenName = "Main display"
     @Published var spotifyStatus = SpotifyStatus.notRunning
+    @Published var calendarStatus = CalendarStatus.permissionNeeded
 
     private let spotifyController = SpotifyController()
+    private let calendarController = CalendarController()
     private var artworkCache: [String: NSImage] = [:]
     private var artworkURLInFlight: String?
+    private var lastCalendarRefresh = Date.distantPast
 
     func refresh() {
         activeApplicationName = NSWorkspace.shared.frontmostApplication?.localizedName ?? "No active app"
@@ -31,6 +34,7 @@ final class ShelfStore: ObservableObject {
         }
 
         refreshSpotify()
+        refreshCalendar()
     }
 
     func addFiles(_ urls: [URL]) {
@@ -64,6 +68,29 @@ final class ShelfStore: ObservableObject {
 
     func openSpotify() {
         spotifyController.openSpotify()
+    }
+
+    func requestCalendarAccess() {
+        calendarStatus = CalendarStatus(availability: .loading, event: nil)
+
+        calendarController.requestAccess { [weak self] status in
+            DispatchQueue.main.async {
+                self?.calendarStatus = status
+                self?.lastCalendarRefresh = Date()
+            }
+        }
+    }
+
+    func openCalendarEvent(_ event: CalendarEvent) {
+        if let joinURL = event.joinURL {
+            NSWorkspace.shared.open(joinURL)
+        } else {
+            calendarController.openCalendar()
+        }
+    }
+
+    func openCalendarApp() {
+        calendarController.openCalendar()
     }
 
     private func refreshSpotify() {
@@ -121,6 +148,16 @@ final class ShelfStore: ObservableObject {
                 self.spotifyStatus.track = track
             }
         }.resume()
+    }
+
+    private func refreshCalendar(force: Bool = false) {
+        let now = Date()
+        guard force || now.timeIntervalSince(lastCalendarRefresh) > 30 else {
+            return
+        }
+
+        lastCalendarRefresh = now
+        calendarStatus = calendarController.currentStatus()
     }
 }
 
