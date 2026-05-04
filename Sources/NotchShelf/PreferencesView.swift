@@ -26,6 +26,7 @@ struct PreferencesView: View {
 
                 Toggle("Start pinned", isOn: $settings.startPinned)
                 Toggle("Collapse after hover", isOn: $settings.collapseOnHoverExit)
+                Toggle("Show on top hover", isOn: $settings.autoShowOnTopHover)
             }
 
             Divider()

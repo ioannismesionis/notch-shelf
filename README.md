@@ -97,8 +97,11 @@ Current controls:
 - File shelf
 - Start pinned
 - Collapse after hover
+- Show on top hover
 - Refresh interval
 - Calendar lookahead
+
+When "Show on top hover" is enabled, NotchShelf hides itself until the pointer reaches the top-center notch/menu-bar area.
 
 ## Spotify Widget
 

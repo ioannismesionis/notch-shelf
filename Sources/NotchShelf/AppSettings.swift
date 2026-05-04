@@ -27,6 +27,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(collapseOnHoverExit, forKey: Keys.collapseOnHoverExit) }
     }
 
+    @Published var autoShowOnTopHover: Bool {
+        didSet { defaults.set(autoShowOnTopHover, forKey: Keys.autoShowOnTopHover) }
+    }
+
     @Published var refreshInterval: Double {
         didSet { defaults.set(refreshInterval, forKey: Keys.refreshInterval) }
     }
@@ -47,6 +51,7 @@ final class AppSettings: ObservableObject {
             Keys.showFileShelf: true,
             Keys.startPinned: false,
             Keys.collapseOnHoverExit: true,
+            Keys.autoShowOnTopHover: true,
             Keys.refreshInterval: 2.0,
             Keys.calendarLookaheadDays: 7
         ])
@@ -57,6 +62,7 @@ final class AppSettings: ObservableObject {
         showFileShelf = defaults.bool(forKey: Keys.showFileShelf)
         startPinned = defaults.bool(forKey: Keys.startPinned)
         collapseOnHoverExit = defaults.bool(forKey: Keys.collapseOnHoverExit)
+        autoShowOnTopHover = defaults.bool(forKey: Keys.autoShowOnTopHover)
         refreshInterval = defaults.double(forKey: Keys.refreshInterval)
         calendarLookaheadDays = defaults.integer(forKey: Keys.calendarLookaheadDays)
     }
@@ -69,6 +75,7 @@ private enum Keys {
     static let showFileShelf = "showFileShelf"
     static let startPinned = "startPinned"
     static let collapseOnHoverExit = "collapseOnHoverExit"
+    static let autoShowOnTopHover = "autoShowOnTopHover"
     static let refreshInterval = "refreshInterval"
     static let calendarLookaheadDays = "calendarLookaheadDays"
 }

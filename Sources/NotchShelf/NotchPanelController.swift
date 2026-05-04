@@ -10,9 +10,12 @@ final class NotchPanelController: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var collapseTimer: Timer?
     private var refreshTimer: Timer?
+    private var pointerTrackingTimer: Timer?
+    private var isHidingPanel = false
 
     private let collapsedSize = CGSize(width: 310, height: 38)
     private let expandedWidth: CGFloat = 520
+    private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
     override init() {
         store = ShelfStore(settings: settings)
@@ -33,11 +36,16 @@ final class NotchPanelController: NSObject {
         bindStore()
         observeScreens()
         startRefreshTimer()
+        startPointerTracking()
     }
 
     func show() {
         updateFrame(animated: false)
-        panel.orderFrontRegardless()
+        if settings.autoShowOnTopHover, !store.isPinned {
+            panel.orderOut(nil)
+        } else {
+            ensurePanelVisible(animated: false)
+        }
     }
 
     func toggleExpanded() {
@@ -46,6 +54,7 @@ final class NotchPanelController: NSObject {
 
     func expand() {
         collapseTimer?.invalidate()
+        ensurePanelVisible(animated: true)
         store.isExpanded = true
     }
 
@@ -75,6 +84,8 @@ final class NotchPanelController: NSObject {
         settings.startPinned = store.isPinned
         if store.isPinned {
             expand()
+        } else {
+            evaluatePointerHover()
         }
     }
 
@@ -129,7 +140,9 @@ final class NotchPanelController: NSObject {
         settings.objectWillChange
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
+                    self?.store.isPinned = self?.settings.startPinned ?? false
                     self?.restartRefreshTimer(forceCalendar: true)
+                    self?.evaluatePointerHover()
                     self?.updateFrame(animated: true)
                 }
             }
@@ -147,6 +160,15 @@ final class NotchPanelController: NSObject {
 
     private func startRefreshTimer() {
         restartRefreshTimer()
+    }
+
+    private func startPointerTracking() {
+        pointerTrackingTimer?.invalidate()
+        pointerTrackingTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.evaluatePointerHover()
+            }
+        }
     }
 
     private func restartRefreshTimer(forceCalendar: Bool = false) {
@@ -189,6 +211,82 @@ final class NotchPanelController: NSObject {
         }
     }
 
+    private func evaluatePointerHover() {
+        guard settings.autoShowOnTopHover else {
+            if !panel.isVisible {
+                ensurePanelVisible(animated: false)
+            }
+            return
+        }
+
+        guard !store.isPinned else {
+            if !panel.isVisible {
+                ensurePanelVisible(animated: false)
+            }
+            return
+        }
+
+        let pointer = NSEvent.mouseLocation
+        let screen = screen(containing: pointer)
+        let shouldShow = topHoverTriggerRect(for: screen).contains(pointer) || panel.frame.insetBy(dx: -8, dy: -8).contains(pointer)
+
+        if shouldShow {
+            ensurePanelVisible(animated: true)
+            if !store.isExpanded {
+                expand()
+            }
+        } else if panel.isVisible {
+            collapseTimer?.invalidate()
+            store.isExpanded = false
+            updateFrame(animated: true)
+            hidePanel(animated: true)
+        }
+    }
+
+    private func ensurePanelVisible(animated: Bool) {
+        guard !panel.isVisible else {
+            isHidingPanel = false
+            if panel.alphaValue < 1 {
+                panel.alphaValue = 1
+            }
+            return
+        }
+
+        isHidingPanel = false
+        updateFrame(animated: false)
+        panel.alphaValue = animated ? 0 : 1
+        panel.orderFrontRegardless()
+
+        guard animated else { return }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            panel.animator().alphaValue = 1
+        }
+    }
+
+    private func hidePanel(animated: Bool) {
+        guard panel.isVisible, !isHidingPanel else { return }
+
+        if animated {
+            isHidingPanel = true
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.12
+                panel.animator().alphaValue = 0
+            } completionHandler: { [weak self] in
+                guard let self, self.isHidingPanel, !self.store.isPinned else { return }
+                self.panel.orderOut(nil)
+                self.panel.alphaValue = 1
+                self.isHidingPanel = false
+            }
+            return
+        }
+
+        isHidingPanel = false
+        panel.orderOut(nil)
+        panel.alphaValue = 1
+    }
+
     private func expandedSize() -> CGSize {
         var height: CGFloat = 72
 
@@ -213,10 +311,23 @@ final class NotchPanelController: NSObject {
 
     private func screenForCurrentPointer() -> NSScreen {
         let pointer = NSEvent.mouseLocation
-        return NSScreen.screens.first { $0.frame.contains(pointer) }
+        return screen(containing: pointer)
+    }
+
+    private func screen(containing point: CGPoint) -> NSScreen {
+        NSScreen.screens.first { $0.frame.contains(point) }
             ?? NSScreen.main
             ?? NSScreen.screens.first
             ?? NSScreen()
+    }
+
+    private func topHoverTriggerRect(for screen: NSScreen) -> CGRect {
+        CGRect(
+            x: screen.frame.midX - topHoverTriggerSize.width / 2,
+            y: screen.frame.maxY - topHoverTriggerSize.height,
+            width: topHoverTriggerSize.width,
+            height: topHoverTriggerSize.height
+        )
     }
 }
 
