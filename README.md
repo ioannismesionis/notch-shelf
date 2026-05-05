@@ -91,7 +91,7 @@ Current controls:
 - Start pinned
 - Refresh interval
 
-When pinned, NotchShelf stays visible. When unpinned, it hides after the pointer leaves the top-center notch/menu-bar area.
+When pinned, NotchShelf stays visible. When unpinned, it hides after the pointer leaves the top-center notch/menu-bar area and opens expanded when the pointer returns.
 
 ## Spotify Widget
 

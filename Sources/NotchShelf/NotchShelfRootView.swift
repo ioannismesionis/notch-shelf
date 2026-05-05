@@ -5,24 +5,51 @@ struct NotchShelfRootView: View {
     let actions: ShelfActions
 
     var body: some View {
-        ZStack {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+        let cornerRadius: CGFloat = store.isExpanded ? 28 : 21
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-            if store.isExpanded {
-                ExpandedSpotifyView(store: store, actions: actions)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            } else {
-                CollapsedSpotifyPillView(store: store, actions: actions)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        ZStack {
+            Color.clear
+
+            ZStack {
+                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.11),
+                        Color.black.opacity(0.28)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                Color.black.opacity(0.22)
+
+                if store.isExpanded {
+                    ExpandedSpotifyView(store: store, actions: actions)
+                        .transition(.opacity.combined(with: .scale(scale: 0.985)))
+                } else {
+                    CollapsedSpotifyPillView(store: store, actions: actions)
+                        .transition(.opacity.combined(with: .scale(scale: 0.985)))
+                }
             }
+            .clipShape(shape)
+            .overlay(
+                shape
+                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .overlay(
+                shape
+                    .strokeBorder(Color.black.opacity(0.28), lineWidth: 0.5)
+                    .blendMode(.overlay)
+            )
+            .compositingGroup()
+            .shadow(color: .black.opacity(0.25), radius: 14, x: 0, y: 8)
+            .padding(.top, 2)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
         }
-        .clipShape(RoundedRectangle(cornerRadius: store.isExpanded ? 24 : 19, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: store.isExpanded ? 24 : 19, style: .continuous)
-                .stroke(Color.white.opacity(0.16), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.32), radius: 18, x: 0, y: 12)
-        .animation(.easeInOut(duration: 0.16), value: store.isExpanded)
+        .animation(.easeInOut(duration: 0.18), value: store.isExpanded)
         .onHover(perform: actions.setHovering)
     }
 }

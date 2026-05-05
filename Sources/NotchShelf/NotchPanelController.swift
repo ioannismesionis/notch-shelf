@@ -14,8 +14,8 @@ final class NotchPanelController: NSObject {
     private var isHidingPanel = false
     private var suppressAutoShowUntilPointerExit = false
 
-    private let collapsedSize = CGSize(width: 310, height: 38)
-    private let expandedSize = CGSize(width: 520, height: 166)
+    private let collapsedSize = CGSize(width: 330, height: 56)
+    private let expandedSize = CGSize(width: 540, height: 184)
     private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
     override init() {
@@ -55,20 +55,19 @@ final class NotchPanelController: NSObject {
 
     func expand() {
         collapseTimer?.invalidate()
-        ensurePanelVisible(animated: true)
         store.isExpanded = true
+        ensurePanelVisible(animated: true)
     }
 
     func collapse() {
         collapseTimer?.invalidate()
-        store.isExpanded = false
 
         if store.isPinned {
+            store.isExpanded = false
             ensurePanelVisible(animated: true)
         } else {
             suppressAutoShowUntilPointerExit = true
-            updateFrame(animated: true)
-            hidePanel(animated: true)
+            hidePanel(animated: true, collapseAfterHide: true)
         }
     }
 
@@ -101,7 +100,7 @@ final class NotchPanelController: NSObject {
     private func configurePanel() {
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.level = .statusBar
         panel.collectionBehavior = [
             .canJoinAllSpaces,
@@ -120,7 +119,10 @@ final class NotchPanelController: NSObject {
             spotifyOpen: { [weak self] in self?.store.openSpotify() }
         )
 
-        panel.contentView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))
+        let hostingView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        panel.contentView = hostingView
     }
 
     private func bindStore() {
@@ -190,19 +192,11 @@ final class NotchPanelController: NSObject {
     }
 
     private func updateFrame(animated: Bool) {
-        let size = store.isExpanded ? expandedSize : collapsedSize
-        let screen = screenForCurrentPointer()
-        let topPadding: CGFloat = store.isExpanded ? 9 : 6
-
-        let origin = CGPoint(
-            x: screen.frame.midX - size.width / 2,
-            y: screen.frame.maxY - size.height - topPadding
-        )
-        let frame = CGRect(origin: origin, size: size)
+        let frame = targetFrame()
 
         if animated {
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.18
+                context.duration = 0.2
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 panel.animator().setFrame(frame, display: true)
             }
@@ -235,15 +229,10 @@ final class NotchPanelController: NSObject {
         let shouldShow = isInTriggerZone || isInPanelZone
 
         if shouldShow {
-            ensurePanelVisible(animated: true)
-            if !store.isExpanded {
-                expand()
-            }
+            expand()
         } else if panel.isVisible {
             collapseTimer?.invalidate()
-            store.isExpanded = false
-            updateFrame(animated: true)
-            hidePanel(animated: true)
+            hidePanel(animated: true, collapseAfterHide: true)
         }
     }
 
@@ -253,35 +242,56 @@ final class NotchPanelController: NSObject {
             if panel.alphaValue < 1 {
                 panel.alphaValue = 1
             }
+            updateFrame(animated: animated)
             return
         }
 
         isHidingPanel = false
-        updateFrame(animated: false)
+        let frame = targetFrame()
+        panel.setFrame(animated ? compressedFrame(from: frame) : frame, display: true)
         panel.alphaValue = animated ? 0 : 1
         panel.orderFrontRegardless()
 
         guard animated else { return }
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
+            context.duration = 0.18
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            panel.animator().setFrame(frame, display: true)
             panel.animator().alphaValue = 1
         }
     }
 
-    private func hidePanel(animated: Bool) {
+    private func hidePanel(animated: Bool, collapseAfterHide: Bool = false) {
         guard panel.isVisible, !isHidingPanel else { return }
+
+        let hiddenFrame = compressedFrame(from: panel.frame)
 
         if animated {
             isHidingPanel = true
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.12
+                context.duration = 0.16
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                panel.animator().setFrame(hiddenFrame, display: true)
                 panel.animator().alphaValue = 0
             } completionHandler: { [weak self] in
-                guard let self, self.isHidingPanel, !self.store.isPinned else { return }
+                guard let self, self.isHidingPanel else { return }
+
+                if self.store.isPinned {
+                    self.panel.alphaValue = 1
+                    self.isHidingPanel = false
+                    self.ensurePanelVisible(animated: true)
+                    return
+                }
+
                 self.panel.orderOut(nil)
                 self.panel.alphaValue = 1
                 self.isHidingPanel = false
+
+                if collapseAfterHide {
+                    self.store.isExpanded = false
+                    self.updateFrame(animated: false)
+                }
             }
             return
         }
@@ -289,6 +299,36 @@ final class NotchPanelController: NSObject {
         isHidingPanel = false
         panel.orderOut(nil)
         panel.alphaValue = 1
+
+        if collapseAfterHide {
+            store.isExpanded = false
+            updateFrame(animated: false)
+        }
+    }
+
+    private func targetFrame() -> CGRect {
+        let size = store.isExpanded ? expandedSize : collapsedSize
+        let screen = screenForCurrentPointer()
+        let topPadding: CGFloat = store.isExpanded ? 4 : 2
+
+        let origin = CGPoint(
+            x: screen.frame.midX - size.width / 2,
+            y: screen.frame.maxY - size.height - topPadding
+        )
+
+        return CGRect(origin: origin, size: size)
+    }
+
+    private func compressedFrame(from frame: CGRect) -> CGRect {
+        let width = max(120, frame.width - 46)
+        let height = max(36, frame.height - 30)
+
+        return CGRect(
+            x: frame.midX - width / 2,
+            y: frame.maxY - height,
+            width: width,
+            height: height
+        )
     }
 
     private func screenForCurrentPointer() -> NSScreen {
