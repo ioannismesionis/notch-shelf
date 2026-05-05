@@ -20,6 +20,7 @@ enum SpotifyPlaybackState: String, Equatable {
 }
 
 struct SpotifyTrack {
+    var uri: String
     var title: String
     var artist: String
     var album: String
@@ -51,6 +52,54 @@ struct SpotifyTrack {
         let minutes = seconds / 60
         let seconds = seconds % 60
         return "\(minutes):\(String(format: "%02d", seconds))"
+    }
+}
+
+enum SpotifySavedTrackStatus: Equatable {
+    case unavailable
+    case needsClientID
+    case needsAuthorization
+    case authorizing
+    case checking
+    case saved
+    case notSaved
+    case updating
+    case error(String)
+
+    var isSaved: Bool {
+        self == .saved
+    }
+
+    var isWorking: Bool {
+        switch self {
+        case .authorizing, .checking, .updating:
+            return true
+        default:
+            return false
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .unavailable:
+            return "No Spotify track"
+        case .needsClientID:
+            return "Add Spotify Client ID in Preferences"
+        case .needsAuthorization:
+            return "Connect Spotify library"
+        case .authorizing:
+            return "Connecting Spotify"
+        case .checking:
+            return "Checking Liked Songs"
+        case .saved:
+            return "Remove from Liked Songs"
+        case .notSaved:
+            return "Save to Liked Songs"
+        case .updating:
+            return "Updating Liked Songs"
+        case .error(let message):
+            return message
+        }
     }
 }
 

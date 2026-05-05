@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SpotifyWidgetView: View {
     let status: SpotifyStatus
+    let savedTrackStatus: SpotifySavedTrackStatus
     let actions: ShelfActions
     let theme: SpotifyTheme
 
@@ -78,13 +79,25 @@ struct SpotifyWidgetView: View {
                     )
                 }
 
-                SpotifyButton(
-                    systemName: "arrow.up.forward.app",
-                    label: "Open Spotify",
-                    compact: true,
-                    theme: theme,
-                    action: actions.spotifyOpen
-                )
+                HStack(spacing: 8) {
+                    SpotifyButton(
+                        systemName: savedTrackStatus.isSaved ? "heart.fill" : "heart",
+                        label: savedTrackStatus.helpText,
+                        compact: true,
+                        isActive: savedTrackStatus.isSaved,
+                        isDisabled: savedTrackStatus.isWorking,
+                        theme: theme,
+                        action: actions.spotifyToggleSavedTrack
+                    )
+
+                    SpotifyButton(
+                        systemName: "arrow.up.forward.app",
+                        label: "Open Spotify",
+                        compact: true,
+                        theme: theme,
+                        action: actions.spotifyOpen
+                    )
+                }
             }
         }
         .padding(12)
@@ -267,6 +280,8 @@ private struct SpotifyButton: View {
     let label: String
     var isPrimary = false
     var compact = false
+    var isActive = false
+    var isDisabled = false
     let theme: SpotifyTheme
     let action: () -> Void
     @State private var isHovering = false
@@ -278,11 +293,14 @@ private struct SpotifyButton: View {
                 .frame(width: buttonWidth, height: buttonHeight)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isPrimary ? theme.primaryControlForeground : .white.opacity(isHovering ? 0.96 : 0.78))
+        .foregroundStyle(foregroundColor)
         .background(buttonBackground)
         .clipShape(RoundedRectangle(cornerRadius: isPrimary ? 10 : 8, style: .continuous))
         .scaleEffect(isHovering ? 1.06 : 1)
+        .opacity(isDisabled ? 0.55 : 1)
+        .disabled(isDisabled)
         .animation(.easeInOut(duration: 0.13), value: isHovering)
+        .animation(.easeInOut(duration: 0.13), value: isDisabled)
         .onHover { isHovering = $0 }
         .help(label)
     }
@@ -307,7 +325,23 @@ private struct SpotifyButton: View {
             return isHovering ? Color.white.opacity(0.92) : theme.primaryControlBackground
         }
 
+        if isActive {
+            return Color(red: 0.12, green: 0.73, blue: 0.33).opacity(isHovering ? 0.28 : 0.20)
+        }
+
         return isHovering ? theme.controlHoverBackground : theme.controlBackground
+    }
+
+    private var foregroundColor: Color {
+        if isPrimary {
+            return theme.primaryControlForeground
+        }
+
+        if isActive {
+            return Color(red: 0.36, green: 1.0, blue: 0.58)
+        }
+
+        return .white.opacity(isHovering ? 0.96 : 0.78)
     }
 }
 

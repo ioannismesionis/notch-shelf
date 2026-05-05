@@ -6,5 +6,6 @@ struct ShelfActions {
     let spotifyPrevious: () -> Void
     let spotifyNext: () -> Void
     let spotifyOpen: () -> Void
+    let spotifyToggleSavedTrack: () -> Void
     let openAutomationSettings: () -> Void
 }

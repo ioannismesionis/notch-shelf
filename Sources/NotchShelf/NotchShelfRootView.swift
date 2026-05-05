@@ -111,7 +111,12 @@ private struct ExpandedSpotifyView: View {
     var body: some View {
         VStack(spacing: 13) {
             header
-            SpotifyWidgetView(status: store.spotifyStatus, actions: actions, theme: theme)
+            SpotifyWidgetView(
+                status: store.spotifyStatus,
+                savedTrackStatus: store.savedTrackStatus,
+                actions: actions,
+                theme: theme
+            )
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)

@@ -27,12 +27,19 @@ struct PreferencesView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+
+                TextField("Spotify Client ID", text: $settings.spotifyClientID)
+                    .textFieldStyle(.roundedBorder)
+
+                Text("Redirect URI: notchshelf://spotify-auth")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
         }
         .padding(24)
-        .frame(width: 430, height: 220, alignment: .topLeading)
+        .frame(width: 430, height: 300, alignment: .topLeading)
     }
 
     private func sectionTitle(_ title: String) -> some View {

@@ -117,6 +117,7 @@ final class NotchPanelController: NSObject {
             spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
             spotifyNext: { [weak self] in self?.store.spotifyNext() },
             spotifyOpen: { [weak self] in self?.store.openSpotify() },
+            spotifyToggleSavedTrack: { [weak self] in self?.store.spotifyToggleSavedTrack() },
             openAutomationSettings: { Self.openAutomationSettings() }
         )
 

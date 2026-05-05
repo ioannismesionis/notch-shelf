@@ -14,6 +14,7 @@ final class SpotifyController {
             end if
 
             set trackName to name of current track as string
+            set trackURI to id of current track as string
             set trackArtist to artist of current track as string
             set trackAlbum to album of current track as string
             set trackArtwork to artwork url of current track as string
@@ -21,7 +22,7 @@ final class SpotifyController {
             set trackPosition to player position as real
             set playbackState to player state as string
 
-            return {"available", playbackState, trackName, trackArtist, trackAlbum, trackArtwork, trackDuration as string, trackPosition as string}
+            return {"available", playbackState, trackName, trackURI, trackArtist, trackAlbum, trackArtwork, trackDuration as string, trackPosition as string}
         end tell
         """
 
@@ -36,14 +37,15 @@ final class SpotifyController {
         }
 
         let playbackState = SpotifyPlaybackState(rawValue: stringValue(at: 2, in: descriptor)) ?? .unknown
-        let durationMilliseconds = Int(stringValue(at: 7, in: descriptor)) ?? 0
-        let positionSeconds = Double(stringValue(at: 8, in: descriptor)) ?? 0
+        let durationMilliseconds = Int(stringValue(at: 8, in: descriptor)) ?? 0
+        let positionSeconds = Double(stringValue(at: 9, in: descriptor)) ?? 0
 
         let track = SpotifyTrack(
+            uri: stringValue(at: 4, in: descriptor),
             title: stringValue(at: 3, in: descriptor),
-            artist: stringValue(at: 4, in: descriptor),
-            album: stringValue(at: 5, in: descriptor),
-            artworkURL: stringValue(at: 6, in: descriptor),
+            artist: stringValue(at: 5, in: descriptor),
+            album: stringValue(at: 6, in: descriptor),
+            artworkURL: stringValue(at: 7, in: descriptor),
             durationMilliseconds: durationMilliseconds,
             positionSeconds: positionSeconds,
             playbackState: playbackState,

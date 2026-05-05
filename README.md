@@ -11,7 +11,7 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Spotify-branded empty and fallback states
 - Menu bar status item
 - Multi-screen repositioning
-- Spotify artwork and playback controls
+- Spotify artwork, playback controls, and Liked Songs heart
 
 ## Requirements
 
@@ -92,6 +92,7 @@ Current controls:
 
 - Start pinned
 - Refresh interval
+- Spotify Client ID
 
 The pin controls persistence: pinned keeps NotchShelf visible when the pointer leaves; unpinned hides it after the pointer leaves the top-center notch/menu-bar area and opens it expanded when the pointer returns.
 
@@ -105,10 +106,29 @@ If permission is denied, allow access in:
 System Settings > Privacy & Security > Automation
 ```
 
+The Liked Songs heart uses Spotify Web API OAuth with PKCE and stores the OAuth refresh token in Keychain. To enable it:
+
+1. Create an app in the Spotify Developer Dashboard.
+2. Add this Redirect URI to the Spotify app settings:
+
+```text
+notchshelf://spotify-auth
+```
+
+3. Copy the Spotify app Client ID into NotchShelf Preferences.
+4. Click the heart button in NotchShelf and approve library access.
+
+Requested Spotify scopes:
+
+```text
+user-library-read user-library-modify
+```
+
 ## Next Build Steps
 
 - Add launch-at-login support
 - Add Apple Music / system Now Playing support
+- Add seek and volume controls
 - Add keyboard shortcut support
 - Package as a signed `.app`/`.dmg`
 - Add a full Xcode project once Xcode is selected instead of Command Line Tools
