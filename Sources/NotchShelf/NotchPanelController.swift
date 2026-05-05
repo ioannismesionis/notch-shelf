@@ -97,6 +97,14 @@ final class NotchPanelController: NSObject {
         }
     }
 
+    func hideFromControl() {
+        collapseTimer?.invalidate()
+        suppressAutoShowUntilPointerExit = true
+        store.isPinned = false
+        settings.startPinned = false
+        hidePanel(animated: true, collapseAfterHide: true)
+    }
+
     private func configurePanel() {
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -113,10 +121,12 @@ final class NotchPanelController: NSObject {
             setHovering: { [weak self] isHovering in self?.setHovering(isHovering) },
             toggleExpanded: { [weak self] in self?.toggleExpanded() },
             togglePinned: { [weak self] in self?.togglePinned() },
+            hidePanel: { [weak self] in self?.hideFromControl() },
             spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
             spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
             spotifyNext: { [weak self] in self?.store.spotifyNext() },
-            spotifyOpen: { [weak self] in self?.store.openSpotify() }
+            spotifyOpen: { [weak self] in self?.store.openSpotify() },
+            openAutomationSettings: { Self.openAutomationSettings() }
         )
 
         let hostingView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))
@@ -329,6 +339,14 @@ final class NotchPanelController: NSObject {
             width: width,
             height: height
         )
+    }
+
+    private static func openAutomationSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") else {
+            return
+        }
+
+        NSWorkspace.shared.open(url)
     }
 
     private func screenForCurrentPointer() -> NSScreen {

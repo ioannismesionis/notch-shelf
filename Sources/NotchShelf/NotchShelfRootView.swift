@@ -7,6 +7,7 @@ struct NotchShelfRootView: View {
     var body: some View {
         let cornerRadius: CGFloat = store.isExpanded ? 28 : 21
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let theme = SpotifyTheme(track: store.spotifyStatus.track)
 
         ZStack {
             Color.clear
@@ -16,27 +17,28 @@ struct NotchShelfRootView: View {
 
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.11),
-                        Color.black.opacity(0.28)
+                        theme.surfaceTop,
+                        theme.surfaceMiddle,
+                        theme.surfaceBottom
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
 
-                Color.black.opacity(0.22)
+                Color.black.opacity(0.20)
 
                 if store.isExpanded {
-                    ExpandedSpotifyView(store: store, actions: actions)
+                    ExpandedSpotifyView(store: store, actions: actions, theme: theme)
                         .transition(.opacity.combined(with: .scale(scale: 0.985)))
                 } else {
-                    CollapsedSpotifyPillView(store: store, actions: actions)
+                    CollapsedSpotifyPillView(store: store, actions: actions, theme: theme)
                         .transition(.opacity.combined(with: .scale(scale: 0.985)))
                 }
             }
             .clipShape(shape)
             .overlay(
                 shape
-                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                    .strokeBorder(theme.cardBorder, lineWidth: 1)
             )
             .overlay(
                 shape
@@ -50,6 +52,7 @@ struct NotchShelfRootView: View {
             .padding(.bottom, 12)
         }
         .animation(.easeInOut(duration: 0.18), value: store.isExpanded)
+        .animation(.easeInOut(duration: 0.22), value: store.spotifyStatus.track?.artworkURL ?? "")
         .onHover(perform: actions.setHovering)
     }
 }
@@ -57,6 +60,8 @@ struct NotchShelfRootView: View {
 private struct CollapsedSpotifyPillView: View {
     @ObservedObject var store: ShelfStore
     let actions: ShelfActions
+    let theme: SpotifyTheme
+    @State private var isHovering = false
 
     var body: some View {
         Button(action: actions.toggleExpanded) {
@@ -93,17 +98,22 @@ private struct CollapsedSpotifyPillView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(isHovering ? theme.controlHoverBackground : Color.clear)
+        .scaleEffect(isHovering ? 1.015 : 1)
+        .animation(.easeInOut(duration: 0.14), value: isHovering)
+        .onHover { isHovering = $0 }
     }
 }
 
 private struct ExpandedSpotifyView: View {
     @ObservedObject var store: ShelfStore
     let actions: ShelfActions
+    let theme: SpotifyTheme
 
     var body: some View {
         VStack(spacing: 13) {
             header
-            SpotifyWidgetView(status: store.spotifyStatus, actions: actions)
+            SpotifyWidgetView(status: store.spotifyStatus, actions: actions, theme: theme)
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)
@@ -126,10 +136,11 @@ private struct ExpandedSpotifyView: View {
             IconButton(
                 systemName: store.isPinned ? "pin.fill" : "pin",
                 label: store.isPinned ? "Hide when pointer leaves" : "Keep visible",
+                theme: theme,
                 action: actions.togglePinned
             )
 
-            IconButton(systemName: "minus", label: "Collapse", action: actions.toggleExpanded)
+            IconButton(systemName: "xmark", label: "Hide", theme: theme, action: actions.hidePanel)
         }
     }
 }
@@ -137,7 +148,9 @@ private struct ExpandedSpotifyView: View {
 private struct IconButton: View {
     let systemName: String
     let label: String
+    let theme: SpotifyTheme
     let action: () -> Void
+    @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
@@ -147,9 +160,12 @@ private struct IconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white.opacity(0.82))
-        .background(Color.white.opacity(0.08))
+        .foregroundStyle(.white.opacity(isHovering ? 0.98 : 0.82))
+        .background(isHovering ? theme.controlHoverBackground : theme.controlBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .scaleEffect(isHovering ? 1.06 : 1)
+        .animation(.easeInOut(duration: 0.13), value: isHovering)
+        .onHover { isHovering = $0 }
         .help(label)
     }
 }
