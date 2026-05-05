@@ -5,6 +5,7 @@ import SwiftUI
 final class NotchPanelController: NSObject {
     let settings = AppSettings.shared
     let store: ShelfStore
+    var openPreferences: (() -> Void)?
 
     private let panel: NotchPanel
     private var cancellables = Set<AnyCancellable>()
@@ -16,6 +17,7 @@ final class NotchPanelController: NSObject {
 
     private let collapsedSize = CGSize(width: 330, height: 56)
     private let expandedSize = CGSize(width: 580, height: 204)
+    private let setupSize = CGSize(width: 640, height: 438)
     private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
     override init() {
@@ -33,6 +35,10 @@ final class NotchPanelController: NSObject {
             store.isExpanded = true
         }
 
+        if store.isFirstRunSetupVisible {
+            store.isExpanded = true
+        }
+
         configurePanel()
         bindStore()
         observeScreens()
@@ -42,7 +48,7 @@ final class NotchPanelController: NSObject {
 
     func show() {
         updateFrame(animated: false)
-        if store.isPinned {
+        if store.isPinned || store.isFirstRunSetupVisible {
             ensurePanelVisible(animated: false)
         } else {
             panel.orderOut(nil)
@@ -138,7 +144,14 @@ final class NotchPanelController: NSObject {
             spotifySetVolume: { [weak self] volume in self?.store.spotifySetVolume(volume) },
             spotifyToggleShuffle: { [weak self] in self?.store.spotifyToggleShuffle() },
             spotifyToggleRepeat: { [weak self] in self?.store.spotifyToggleRepeat() },
-            openAutomationSettings: { Self.openAutomationSettings() }
+            spotifyAuthorizeLibrary: { [weak self] in self?.store.spotifyAuthorizeLibrary() },
+            openPreferences: { [weak self] in self?.openPreferences?() },
+            openAutomationSettings: { Self.openAutomationSettings() },
+            enableLaunchAtLogin: { [weak self] in self?.enableLaunchAtLogin() },
+            completeFirstRunSetup: { [weak self] in
+                self?.store.completeFirstRunSetup()
+                self?.evaluatePointerHover()
+            }
         )
 
         let hostingView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))
@@ -155,15 +168,40 @@ final class NotchPanelController: NSObject {
             }
             .store(in: &cancellables)
 
+        store.$isFirstRunSetupVisible
+            .removeDuplicates()
+            .sink { [weak self] isVisible in
+                guard let self else { return }
+
+                if isVisible {
+                    self.expand()
+                } else if !self.store.isPinned {
+                    self.evaluatePointerHover()
+                }
+
+                self.updateFrame(animated: true)
+            }
+            .store(in: &cancellables)
+
+        settings.$firstRunSetupCompleted
+            .removeDuplicates()
+            .sink { [weak self] isCompleted in
+                guard let self else { return }
+
+                self.store.isFirstRunSetupVisible = !isCompleted
+            }
+            .store(in: &cancellables)
+
         settings.objectWillChange
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
                     guard let self else { return }
 
                     self.store.isPinned = self.settings.startPinned
+                    self.store.refreshSetupStatus()
                     self.restartRefreshTimer()
 
-                    if self.store.isPinned {
+                    if self.store.isPinned || self.store.isFirstRunSetupVisible {
                         self.expand()
                     } else {
                         self.evaluatePointerHover()
@@ -228,6 +266,13 @@ final class NotchPanelController: NSObject {
     }
 
     private func evaluatePointerHover() {
+        guard !store.isFirstRunSetupVisible else {
+            if !panel.isVisible {
+                ensurePanelVisible(animated: false)
+            }
+            return
+        }
+
         guard !store.isPinned else {
             if !panel.isVisible {
                 ensurePanelVisible(animated: false)
@@ -329,7 +374,7 @@ final class NotchPanelController: NSObject {
     }
 
     private func targetFrame() -> CGRect {
-        let size = store.isExpanded ? expandedSize : collapsedSize
+        let size = store.isFirstRunSetupVisible ? setupSize : (store.isExpanded ? expandedSize : collapsedSize)
         let screen = screenForCurrentPointer()
         let topPadding: CGFloat = store.isExpanded ? 4 : 2
 
@@ -359,6 +404,16 @@ final class NotchPanelController: NSObject {
         }
 
         NSWorkspace.shared.open(url)
+    }
+
+    private func enableLaunchAtLogin() {
+        do {
+            try LaunchAtLoginController.setEnabled(true)
+        } catch {
+            NSSound.beep()
+        }
+
+        store.refreshSetupStatus()
     }
 
     private func screenForCurrentPointer() -> NSScreen {

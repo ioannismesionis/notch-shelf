@@ -10,6 +10,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let controller = NotchPanelController()
+        controller.openPreferences = { [weak self] in
+            self?.showPreferences()
+        }
         self.panelController = controller
 
         configureStatusItem()

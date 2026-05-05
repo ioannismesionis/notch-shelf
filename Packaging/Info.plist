@@ -8,6 +8,8 @@
 	<string>NotchShelf</string>
 	<key>CFBundleExecutable</key>
 	<string>NotchShelf</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.ioannismesionis.notchshelf</string>
 	<key>CFBundleInfoDictionaryVersion</key>

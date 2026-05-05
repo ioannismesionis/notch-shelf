@@ -6,6 +6,10 @@ final class ShelfStore: ObservableObject {
     @Published var isPinned = false
     @Published var spotifyStatus = SpotifyStatus.notRunning
     @Published var savedTrackStatus = SpotifySavedTrackStatus.unavailable
+    @Published var isFirstRunSetupVisible: Bool
+    @Published var isSpotifyLibraryConnected = false
+    @Published var isSpotifyAppInstalled = false
+    @Published var launchAtLoginStatusText = LaunchAtLoginController.statusText
 
     private let spotifyController = SpotifyController()
     private let spotifyWebAPIClient = SpotifyWebAPIClient()
@@ -17,10 +21,13 @@ final class ShelfStore: ObservableObject {
 
     init(settings: AppSettings = .shared) {
         self.settings = settings
+        isFirstRunSetupVisible = !settings.firstRunSetupCompleted
         isPinned = settings.startPinned
+        refreshSetupStatus()
     }
 
     func refresh() {
+        refreshSetupStatus()
         refreshSpotify()
     }
 
@@ -108,6 +115,57 @@ final class ShelfStore: ObservableObject {
             removeTrack(uri, clientID: clientID)
         } else {
             saveTrack(uri, clientID: clientID)
+        }
+    }
+
+    func spotifyAuthorizeLibrary() {
+        let clientID = settings.spotifyClientID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clientID.isEmpty else {
+            savedTrackStatus = .needsClientID
+            return
+        }
+
+        savedTrackStatus = .authorizing
+        spotifyWebAPIClient.authorize(clientID: clientID) { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .success:
+                self.refreshSetupStatus()
+                self.refreshSavedTrackStatus(for: self.spotifyStatus.track?.uri)
+            case .failure(let error):
+                self.savedTrackStatus = .error(Self.message(for: error))
+            }
+        }
+    }
+
+    func completeFirstRunSetup() {
+        settings.firstRunSetupCompleted = true
+        isFirstRunSetupVisible = false
+    }
+
+    func showFirstRunSetup() {
+        settings.firstRunSetupCompleted = false
+        isFirstRunSetupVisible = true
+        refreshSetupStatus()
+    }
+
+    func refreshSetupStatus() {
+        isSpotifyLibraryConnected = spotifyWebAPIClient.hasToken()
+        isSpotifyAppInstalled = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.spotify.client") != nil
+        launchAtLoginStatusText = LaunchAtLoginController.statusText
+    }
+
+    var hasSpotifyClientID: Bool {
+        !settings.spotifyClientID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var isAutomationReady: Bool {
+        switch spotifyStatus.availability {
+        case .available, .noTrack:
+            return true
+        default:
+            return false
         }
     }
 

@@ -13,6 +13,8 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Multi-screen repositioning
 - Launch-at-login option
 - Option-Space global shortcut
+- First-run setup checklist
+- Custom app icon
 - Spotify artwork, seek, volume, shuffle, repeat, playback controls, and Liked Songs heart
 
 ## Requirements
@@ -38,6 +40,12 @@ Verify the generated app bundle:
 
 ```bash
 make verify-app
+```
+
+Build a release zip:
+
+```bash
+make release
 ```
 
 Stop a running NotchShelf instance:
@@ -70,6 +78,12 @@ The app bundle is written to:
 .build/debug/NotchShelf.app
 ```
 
+Release packages are written to:
+
+```text
+.build/release/
+```
+
 The bundle is assembled and signed in `/private/tmp` first, then copied into `.build`. This avoids macOS `codesign` failures caused by File Provider or Finder metadata in `Documents` folders.
 
 The direct executable path is also available:
@@ -95,6 +109,7 @@ Current controls:
 - Start pinned
 - Open at login
 - Option-Space shortcut
+- Show first-run setup
 - Refresh interval
 - Spotify Client ID
 
@@ -133,5 +148,5 @@ Playback controls include previous, play/pause, next, shuffle, repeat, a seekabl
 ## Next Build Steps
 
 - Add Apple Music / system Now Playing support
-- Package as a signed `.app`/`.dmg`
+- Package as a notarized `.dmg`
 - Add a full Xcode project once Xcode is selected instead of Command Line Tools

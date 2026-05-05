@@ -35,6 +35,11 @@ struct PreferencesView: View {
                 Text("Shows NotchShelf expanded. Press again to hide or collapse it.")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
+
+                Button("Show first-run setup") {
+                    settings.firstRunSetupCompleted = false
+                }
+                .buttonStyle(.bordered)
             }
 
             Divider()
@@ -60,7 +65,7 @@ struct PreferencesView: View {
             Spacer()
         }
         .padding(24)
-        .frame(width: 430, height: 400, alignment: .topLeading)
+        .frame(width: 430, height: 430, alignment: .topLeading)
         .onAppear(perform: refreshLaunchAtLoginState)
     }
 

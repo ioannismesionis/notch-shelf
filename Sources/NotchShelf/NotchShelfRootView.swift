@@ -64,42 +64,83 @@ private struct CollapsedSpotifyPillView: View {
     @State private var isHovering = false
 
     var body: some View {
-        Button(action: actions.toggleExpanded) {
-            HStack(spacing: 9) {
-                if let track = store.spotifyStatus.track {
-                    AlbumArtworkView(track: track)
-                        .frame(width: 24, height: 24)
+        HStack(spacing: 10) {
+            Button(action: actions.toggleExpanded) {
+                HStack(spacing: 9) {
+                    if let track = store.spotifyStatus.track {
+                        AlbumArtworkView(track: track)
+                            .frame(width: 32, height: 32)
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(track.title)
-                            .font(.system(size: 12, weight: .bold))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(track.title)
+                                .font(.system(size: 12, weight: .bold))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
 
-                        Text(track.playbackState.isPlaying ? track.artist : "Paused")
-                            .font(.system(size: 10, weight: .semibold))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .foregroundStyle(.white.opacity(0.58))
+                            HStack(spacing: 6) {
+                                PlaybackBars(isPlaying: track.playbackState.isPlaying)
+
+                                Text(track.playbackState.isPlaying ? track.artist : "Paused")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .foregroundStyle(.white.opacity(0.58))
+                            }
+
+                            MiniProgressBar(progress: track.progress, theme: theme)
+                        }
+                        .foregroundStyle(.white)
+                    } else {
+                        SpotifyLogoView(size: 22)
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Spotify")
+                                .font(.system(size: 13, weight: .bold))
+                                .lineLimit(1)
+
+                            Text(collapsedEmptyText)
+                                .font(.system(size: 10, weight: .semibold))
+                                .lineLimit(1)
+                                .foregroundStyle(.white.opacity(0.58))
+                        }
+                        .foregroundStyle(.white)
                     }
-                        .foregroundStyle(.white)
-                } else {
-                    SpotifyLogoView(size: 20)
-
-                    Text("Spotify")
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                        .foregroundStyle(.white)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+
+            if let track = store.spotifyStatus.track {
+                Button(action: actions.spotifyPlayPause) {
+                    Image(systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(theme.primaryControlForeground)
+                        .frame(width: 28, height: 28)
+                        .background(theme.primaryControlBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help(track.playbackState.isPlaying ? "Pause" : "Play")
+            }
         }
+        .padding(.horizontal, 13)
         .buttonStyle(.plain)
         .background(isHovering ? theme.controlHoverBackground : Color.clear)
         .scaleEffect(isHovering ? 1.015 : 1)
         .animation(.easeInOut(duration: 0.14), value: isHovering)
         .onHover { isHovering = $0 }
+    }
+
+    private var collapsedEmptyText: String {
+        switch store.spotifyStatus.availability {
+        case .notRunning:
+            return "Open Spotify"
+        case .permissionDenied:
+            return "Needs permission"
+        default:
+            return "Nothing playing"
+        }
     }
 }
 
@@ -111,12 +152,17 @@ private struct ExpandedSpotifyView: View {
     var body: some View {
         VStack(spacing: 13) {
             header
-            SpotifyWidgetView(
-                status: store.spotifyStatus,
-                savedTrackStatus: store.savedTrackStatus,
-                actions: actions,
-                theme: theme
-            )
+
+            if store.isFirstRunSetupVisible {
+                FirstRunSetupView(store: store, actions: actions, theme: theme)
+            } else {
+                SpotifyWidgetView(
+                    status: store.spotifyStatus,
+                    savedTrackStatus: store.savedTrackStatus,
+                    actions: actions,
+                    theme: theme
+                )
+            }
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)
@@ -143,6 +189,40 @@ private struct ExpandedSpotifyView: View {
                 action: actions.togglePinned
             )
         }
+    }
+}
+
+private struct MiniProgressBar: View {
+    let progress: Double
+    let theme: SpotifyTheme
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.12))
+
+                Capsule()
+                    .fill(theme.progressFill)
+                    .frame(width: max(3, proxy.size.width * progress))
+            }
+        }
+        .frame(height: 3)
+    }
+}
+
+private struct PlaybackBars: View {
+    let isPlaying: Bool
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(0..<3, id: \.self) { index in
+                Capsule()
+                    .fill(Color.white.opacity(isPlaying ? 0.76 : 0.38))
+                    .frame(width: 2, height: isPlaying ? CGFloat(5 + index * 2) : 4)
+            }
+        }
+        .frame(width: 10, height: 10)
     }
 }
 
