@@ -43,6 +43,32 @@ final class ShelfStore: ObservableObject {
         spotifyController.openSpotify()
     }
 
+    func spotifySeek(to progress: Double) {
+        guard let track = spotifyStatus.track else { return }
+        spotifyController.seek(to: progress, durationMilliseconds: track.durationMilliseconds)
+        refreshSpotify()
+    }
+
+    func spotifySetVolume(_ volume: Double) {
+        spotifyController.setVolume(Int(volume.rounded()))
+
+        guard var track = spotifyStatus.track else { return }
+        track.volume = Int(volume.rounded())
+        spotifyStatus.track = track
+    }
+
+    func spotifyToggleShuffle() {
+        guard let track = spotifyStatus.track else { return }
+        spotifyController.setShuffling(!track.isShuffling)
+        refreshSpotify()
+    }
+
+    func spotifyToggleRepeat() {
+        guard let track = spotifyStatus.track else { return }
+        spotifyController.setRepeating(!track.isRepeating)
+        refreshSpotify()
+    }
+
     func spotifyToggleSavedTrack() {
         guard let uri = spotifyStatus.track?.uri, !uri.isEmpty else {
             savedTrackStatus = .unavailable

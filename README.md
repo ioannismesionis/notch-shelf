@@ -11,7 +11,7 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Spotify-branded empty and fallback states
 - Menu bar status item
 - Multi-screen repositioning
-- Spotify artwork, playback controls, and Liked Songs heart
+- Spotify artwork, seek, volume, shuffle, repeat, playback controls, and Liked Songs heart
 
 ## Requirements
 
@@ -123,6 +123,8 @@ Requested Spotify scopes:
 ```text
 user-library-read user-library-modify
 ```
+
+Playback controls include previous, play/pause, next, shuffle, repeat, a seekable progress bar, and a compact volume slider.
 
 ## Next Build Steps
 

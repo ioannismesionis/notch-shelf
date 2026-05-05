@@ -28,6 +28,9 @@ struct SpotifyTrack {
     var durationMilliseconds: Int
     var positionSeconds: Double
     var playbackState: SpotifyPlaybackState
+    var volume: Int
+    var isShuffling: Bool
+    var isRepeating: Bool
     var artwork: NSImage?
 
     var durationSeconds: Double {

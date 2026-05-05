@@ -15,7 +15,7 @@ final class NotchPanelController: NSObject {
     private var suppressAutoShowUntilPointerExit = false
 
     private let collapsedSize = CGSize(width: 330, height: 56)
-    private let expandedSize = CGSize(width: 540, height: 184)
+    private let expandedSize = CGSize(width: 580, height: 204)
     private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
     override init() {
@@ -118,6 +118,10 @@ final class NotchPanelController: NSObject {
             spotifyNext: { [weak self] in self?.store.spotifyNext() },
             spotifyOpen: { [weak self] in self?.store.openSpotify() },
             spotifyToggleSavedTrack: { [weak self] in self?.store.spotifyToggleSavedTrack() },
+            spotifySeek: { [weak self] progress in self?.store.spotifySeek(to: progress) },
+            spotifySetVolume: { [weak self] volume in self?.store.spotifySetVolume(volume) },
+            spotifyToggleShuffle: { [weak self] in self?.store.spotifyToggleShuffle() },
+            spotifyToggleRepeat: { [weak self] in self?.store.spotifyToggleRepeat() },
             openAutomationSettings: { Self.openAutomationSettings() }
         )
 

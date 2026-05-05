@@ -21,8 +21,11 @@ final class SpotifyController {
             set trackDuration to duration of current track as integer
             set trackPosition to player position as real
             set playbackState to player state as string
+            set currentVolume to sound volume as integer
+            set shuffleState to shuffling as boolean
+            set repeatState to repeating as boolean
 
-            return {"available", playbackState, trackName, trackURI, trackArtist, trackAlbum, trackArtwork, trackDuration as string, trackPosition as string}
+            return {"available", playbackState, trackName, trackURI, trackArtist, trackAlbum, trackArtwork, trackDuration as string, trackPosition as string, currentVolume as string, shuffleState as string, repeatState as string}
         end tell
         """
 
@@ -39,6 +42,7 @@ final class SpotifyController {
         let playbackState = SpotifyPlaybackState(rawValue: stringValue(at: 2, in: descriptor)) ?? .unknown
         let durationMilliseconds = Int(stringValue(at: 8, in: descriptor)) ?? 0
         let positionSeconds = Double(stringValue(at: 9, in: descriptor)) ?? 0
+        let volume = Int(stringValue(at: 10, in: descriptor)) ?? 0
 
         let track = SpotifyTrack(
             uri: stringValue(at: 4, in: descriptor),
@@ -49,6 +53,9 @@ final class SpotifyController {
             durationMilliseconds: durationMilliseconds,
             positionSeconds: positionSeconds,
             playbackState: playbackState,
+            volume: volume,
+            isShuffling: boolValue(at: 11, in: descriptor),
+            isRepeating: boolValue(at: 12, in: descriptor),
             artwork: nil
         )
 
@@ -65,6 +72,26 @@ final class SpotifyController {
 
     func nextTrack() {
         runCommand("tell application \"Spotify\" to next track")
+    }
+
+    func seek(to progress: Double, durationMilliseconds: Int) {
+        let durationSeconds = Double(durationMilliseconds) / 1_000
+        let position = min(max(progress, 0), 1) * max(durationSeconds, 0)
+        let formattedPosition = String(format: "%.2f", locale: Locale(identifier: "en_US_POSIX"), position)
+        runCommand("tell application \"Spotify\" to set player position to \(formattedPosition)")
+    }
+
+    func setVolume(_ volume: Int) {
+        let safeVolume = min(max(volume, 0), 100)
+        runCommand("tell application \"Spotify\" to set sound volume to \(safeVolume)")
+    }
+
+    func setShuffling(_ isShuffling: Bool) {
+        runCommand("tell application \"Spotify\" to set shuffling to \(isShuffling ? "true" : "false")")
+    }
+
+    func setRepeating(_ isRepeating: Bool) {
+        runCommand("tell application \"Spotify\" to set repeating to \(isRepeating ? "true" : "false")")
     }
 
     func openSpotify() {
@@ -107,5 +134,9 @@ final class SpotifyController {
 
     private func stringValue(at index: Int, in descriptor: NSAppleEventDescriptor) -> String {
         descriptor.atIndex(index)?.stringValue ?? ""
+    }
+
+    private func boolValue(at index: Int, in descriptor: NSAppleEventDescriptor) -> Bool {
+        stringValue(at: index, in: descriptor).lowercased() == "true"
     }
 }

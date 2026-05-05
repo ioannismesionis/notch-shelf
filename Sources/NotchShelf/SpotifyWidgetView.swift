@@ -5,6 +5,7 @@ struct SpotifyWidgetView: View {
     let savedTrackStatus: SpotifySavedTrackStatus
     let actions: ShelfActions
     let theme: SpotifyTheme
+    @State private var volumeOverride: Double?
 
     var body: some View {
         Group {
@@ -14,7 +15,7 @@ struct SpotifyWidgetView: View {
                 unavailableState
             }
         }
-        .frame(height: 96)
+        .frame(height: 108)
         .background(theme.cardBackground)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -28,7 +29,7 @@ struct SpotifyWidgetView: View {
             AlbumArtworkView(track: track)
                 .frame(width: 72, height: 72)
 
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(track.title)
                         .font(.system(size: 14, weight: .bold))
@@ -44,7 +45,11 @@ struct SpotifyWidgetView: View {
                 }
 
                 VStack(spacing: 5) {
-                    ProgressBar(progress: track.progress, theme: theme)
+                    SeekableProgressBar(
+                        progress: track.progress,
+                        theme: theme,
+                        onSeek: actions.spotifySeek
+                    )
 
                     HStack {
                         Text(track.elapsedText)
@@ -54,10 +59,29 @@ struct SpotifyWidgetView: View {
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.48))
                 }
+
+                VolumeControl(
+                    volume: volumeOverride ?? Double(track.volume),
+                    theme: theme,
+                    onVolumeChange: { volume in
+                        volumeOverride = volume
+                        actions.spotifySetVolume(volume)
+                    }
+                )
+                .onChange(of: track.volume) { _, newValue in
+                    volumeOverride = Double(newValue)
+                }
             }
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
+                    SpotifyButton(
+                        systemName: "shuffle",
+                        label: track.isShuffling ? "Turn shuffle off" : "Turn shuffle on",
+                        isActive: track.isShuffling,
+                        theme: theme,
+                        action: actions.spotifyToggleShuffle
+                    )
                     SpotifyButton(
                         systemName: "backward.fill",
                         label: "Previous",
@@ -77,15 +101,18 @@ struct SpotifyWidgetView: View {
                         theme: theme,
                         action: actions.spotifyNext
                     )
+                    SpotifyButton(
+                        systemName: "repeat",
+                        label: track.isRepeating ? "Turn repeat off" : "Turn repeat on",
+                        isActive: track.isRepeating,
+                        theme: theme,
+                        action: actions.spotifyToggleRepeat
+                    )
                 }
 
                 HStack(spacing: 8) {
-                    SpotifyButton(
-                        systemName: savedTrackStatus.isSaved ? "heart.fill" : "heart",
-                        label: savedTrackStatus.helpText,
-                        compact: true,
-                        isActive: savedTrackStatus.isSaved,
-                        isDisabled: savedTrackStatus.isWorking,
+                    HeartButton(
+                        status: savedTrackStatus,
                         theme: theme,
                         action: actions.spotifyToggleSavedTrack
                     )
@@ -254,9 +281,11 @@ private struct SpotifyStatusIcon: View {
     }
 }
 
-private struct ProgressBar: View {
+private struct SeekableProgressBar: View {
     let progress: Double
     let theme: SpotifyTheme
+    let onSeek: (Double) -> Void
+    @State private var transientProgress: Double?
 
     var body: some View {
         GeometryReader { proxy in
@@ -266,12 +295,140 @@ private struct ProgressBar: View {
 
                 Capsule()
                     .fill(theme.progressFill)
-                    .frame(width: max(4, proxy.size.width * progress))
+                    .frame(width: max(4, proxy.size.width * displayProgress))
                     .shadow(color: theme.progressFill.opacity(0.34), radius: 5, x: 0, y: 0)
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        transientProgress = progress(for: value.location.x, width: proxy.size.width)
+                    }
+                    .onEnded { value in
+                        let targetProgress = progress(for: value.location.x, width: proxy.size.width)
+                        transientProgress = nil
+                        onSeek(targetProgress)
+                    }
+            )
         }
         .frame(height: 5)
         .animation(.easeOut(duration: 0.24), value: progress)
+        .animation(.easeOut(duration: 0.12), value: transientProgress)
+        .help("Click or drag to seek")
+    }
+
+    private var displayProgress: Double {
+        transientProgress ?? progress
+    }
+
+    private func progress(for xPosition: CGFloat, width: CGFloat) -> Double {
+        guard width > 0 else { return 0 }
+        return min(max(Double(xPosition / width), 0), 1)
+    }
+}
+
+private struct VolumeControl: View {
+    let volume: Double
+    let theme: SpotifyTheme
+    let onVolumeChange: (Double) -> Void
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: volumeIcon)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white.opacity(0.58))
+                .frame(width: 12)
+
+            Slider(
+                value: Binding(
+                    get: { volume },
+                    set: onVolumeChange
+                ),
+                in: 0...100
+            )
+            .controlSize(.mini)
+            .tint(theme.progressFill)
+        }
+        .frame(height: 14)
+        .help("Volume")
+    }
+
+    private var volumeIcon: String {
+        switch volume {
+        case 0...1:
+            return "speaker.slash.fill"
+        case 1..<45:
+            return "speaker.wave.1.fill"
+        case 45..<75:
+            return "speaker.wave.2.fill"
+        default:
+            return "speaker.wave.3.fill"
+        }
+    }
+}
+
+private struct HeartButton: View {
+    let status: SpotifySavedTrackStatus
+    let theme: SpotifyTheme
+    let action: () -> Void
+    @State private var isHovering = false
+    @State private var isPulsing = false
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: status.isSaved ? "heart.fill" : "heart")
+                    .font(.system(size: 11, weight: .bold))
+                    .frame(width: 34, height: 24)
+
+                if isPulsing {
+                    Image(systemName: status.isSaved ? "checkmark.circle.fill" : "minus.circle.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .offset(x: 5, y: -4)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(foregroundColor)
+        .background(buttonBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .scaleEffect(isPulsing ? 1.16 : (isHovering ? 1.06 : 1))
+        .opacity(status.isWorking ? 0.55 : 1)
+        .disabled(status.isWorking)
+        .animation(.easeInOut(duration: 0.13), value: isHovering)
+        .animation(.spring(response: 0.22, dampingFraction: 0.62), value: isPulsing)
+        .onHover { isHovering = $0 }
+        .onChange(of: status.isSaved) { _, _ in
+            pulse()
+        }
+        .help(status.helpText)
+    }
+
+    private var buttonBackground: Color {
+        if status.isSaved {
+            return Color(red: 0.12, green: 0.73, blue: 0.33).opacity(isHovering ? 0.28 : 0.20)
+        }
+
+        return isHovering ? theme.controlHoverBackground : theme.controlBackground
+    }
+
+    private var foregroundColor: Color {
+        if status.isSaved {
+            return Color(red: 0.36, green: 1.0, blue: 0.58)
+        }
+
+        return .white.opacity(isHovering ? 0.96 : 0.78)
+    }
+
+    private func pulse() {
+        guard status == .saved || status == .notSaved else { return }
+
+        isPulsing = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) {
+            isPulsing = false
+        }
     }
 }
 
