@@ -7,7 +7,8 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Floating top-center panel
 - Collapsed notch-style pill
 - Expandable Spotify player
-- Album-art-tinted visual theme
+- macOS-style glass visual theme
+- Spotify-branded empty and fallback states
 - Menu bar status item
 - Multi-screen repositioning
 - Spotify artwork and playback controls

@@ -100,9 +100,7 @@ struct SpotifyWidgetView: View {
                             .strokeBorder(theme.cardBorder, lineWidth: 1)
                     )
 
-                Image(systemName: emptyIconName)
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.82))
+                SpotifyStatusIcon(availability: status.availability)
             }
             .frame(width: 72, height: 72)
 
@@ -127,21 +125,6 @@ struct SpotifyWidgetView: View {
             )
         }
         .padding(12)
-    }
-
-    private var emptyIconName: String {
-        switch status.availability {
-        case .available:
-            return "checkmark.circle.fill"
-        case .notRunning:
-            return "play.circle.fill"
-        case .noTrack:
-            return "music.note.list"
-        case .permissionDenied:
-            return "lock.shield.fill"
-        case .error:
-            return "exclamationmark.triangle.fill"
-        }
     }
 
     private var emptyTitle: String {
@@ -218,12 +201,43 @@ struct AlbumArtworkView: View {
                     endPoint: .bottomTrailing
                 )
 
-                Image(systemName: "music.note")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.74))
+                SpotifyLogoView(size: 34)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private struct SpotifyStatusIcon: View {
+    let availability: SpotifyAvailability
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            SpotifyLogoView(size: 38)
+
+            if let badgeName {
+                Image(systemName: badgeName)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.82))
+                    .frame(width: 18, height: 18)
+                    .background(Color.white.opacity(0.92))
+                    .clipShape(Circle())
+                    .offset(x: 4, y: 4)
+            }
+        }
+    }
+
+    private var badgeName: String? {
+        switch availability {
+        case .available:
+            return "checkmark"
+        case .permissionDenied:
+            return "lock.fill"
+        case .error:
+            return "exclamationmark"
+        default:
+            return nil
+        }
     }
 }
 

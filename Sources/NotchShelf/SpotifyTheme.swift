@@ -15,13 +15,13 @@ struct SpotifyTheme {
     let iconTileBackground: Color
 
     static let fallback = SpotifyTheme(
-        surfaceTop: Color(red: 0.17, green: 0.28, blue: 0.22).opacity(0.62),
-        surfaceMiddle: Color(red: 0.08, green: 0.09, blue: 0.08).opacity(0.88),
-        surfaceBottom: Color.black.opacity(0.64),
-        cardBackground: Color.white.opacity(0.08),
-        cardBorder: Color.white.opacity(0.13),
-        controlBackground: Color.white.opacity(0.08),
-        controlHoverBackground: Color.white.opacity(0.16),
+        surfaceTop: Color.white.opacity(0.18),
+        surfaceMiddle: Color(red: 0.18, green: 0.19, blue: 0.20).opacity(0.42),
+        surfaceBottom: Color.black.opacity(0.46),
+        cardBackground: Color.white.opacity(0.075),
+        cardBorder: Color.white.opacity(0.18),
+        controlBackground: Color.white.opacity(0.075),
+        controlHoverBackground: Color.white.opacity(0.17),
         primaryControlBackground: Color.white,
         primaryControlForeground: Color.black,
         progressFill: Color.white.opacity(0.90),
@@ -39,17 +39,17 @@ struct SpotifyTheme {
     }
 
     private init(primary: NSColor, secondary: NSColor) {
-        surfaceTop = Self.color(Self.adjusted(primary, saturation: 1.08, brightness: 1.12, alpha: 0.55))
-        surfaceMiddle = Self.color(Self.adjusted(secondary, saturation: 0.94, brightness: 0.54, alpha: 0.58))
-        surfaceBottom = Color.black.opacity(0.66)
-        cardBackground = Self.color(Self.adjusted(primary, saturation: 0.9, brightness: 0.82, alpha: 0.18))
-        cardBorder = Self.color(Self.adjusted(primary, saturation: 0.9, brightness: 1.18, alpha: 0.32))
-        controlBackground = Color.white.opacity(0.08)
-        controlHoverBackground = Self.color(Self.adjusted(primary, saturation: 0.85, brightness: 1.08, alpha: 0.24))
+        surfaceTop = Color.white.opacity(0.18)
+        surfaceMiddle = Self.color(Self.adjusted(primary, saturation: 0.75, brightness: 1.05, alpha: 0.10))
+        surfaceBottom = Color.black.opacity(0.48)
+        cardBackground = Color.white.opacity(0.08)
+        cardBorder = Self.color(Self.adjusted(secondary, saturation: 0.62, brightness: 1.18, alpha: 0.18))
+        controlBackground = Color.white.opacity(0.075)
+        controlHoverBackground = Self.color(Self.adjusted(primary, saturation: 0.52, brightness: 1.15, alpha: 0.14))
         primaryControlBackground = Color.white
         primaryControlForeground = Color.black
-        progressFill = Self.color(Self.adjusted(primary, saturation: 0.82, brightness: 1.22, alpha: 0.92))
-        iconTileBackground = Self.color(Self.adjusted(secondary, saturation: 0.82, brightness: 0.92, alpha: 0.28))
+        progressFill = Color.white.opacity(0.92)
+        iconTileBackground = Color.white.opacity(0.10)
     }
 
     private init(

@@ -98,10 +98,10 @@ final class NotchPanelController: NSObject {
     }
 
     func hideFromControl() {
+        guard !store.isPinned else { return }
+
         collapseTimer?.invalidate()
         suppressAutoShowUntilPointerExit = true
-        store.isPinned = false
-        settings.startPinned = false
         hidePanel(animated: true, collapseAfterHide: true)
     }
 

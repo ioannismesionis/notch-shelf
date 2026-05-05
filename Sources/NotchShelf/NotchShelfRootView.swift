@@ -82,11 +82,9 @@ private struct CollapsedSpotifyPillView: View {
                             .truncationMode(.tail)
                             .foregroundStyle(.white.opacity(0.58))
                     }
-                    .foregroundStyle(.white)
-                } else {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
+                } else {
+                    SpotifyLogoView(size: 20)
 
                     Text("Spotify")
                         .font(.system(size: 13, weight: .semibold))
@@ -124,8 +122,8 @@ private struct ExpandedSpotifyView: View {
     private var header: some View {
         HStack(spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: "music.note")
-                    .font(.system(size: 15, weight: .semibold))
+                SpotifyLogoView(size: 18)
+
                 Text("Spotify")
                     .font(.system(size: 14, weight: .bold))
             }
@@ -135,12 +133,14 @@ private struct ExpandedSpotifyView: View {
 
             IconButton(
                 systemName: store.isPinned ? "pin.fill" : "pin",
-                label: store.isPinned ? "Hide when pointer leaves" : "Keep visible",
+                label: store.isPinned ? "Unpin" : "Keep visible",
                 theme: theme,
                 action: actions.togglePinned
             )
 
-            IconButton(systemName: "xmark", label: "Hide", theme: theme, action: actions.hidePanel)
+            if !store.isPinned {
+                IconButton(systemName: "xmark", label: "Hide for now", theme: theme, action: actions.hidePanel)
+            }
         }
     }
 }
