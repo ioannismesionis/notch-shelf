@@ -26,10 +26,6 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>NotchShelf uses Apple Events to read and control Spotify playback when the Spotify widget is visible.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>NotchShelf uses Calendar access to show your next upcoming event in the notch panel.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>NotchShelf uses Calendar access to show your next upcoming event in the notch panel.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>

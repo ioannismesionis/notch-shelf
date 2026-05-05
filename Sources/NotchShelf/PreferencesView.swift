@@ -11,17 +11,6 @@ struct PreferencesView: View {
                 .font(.system(size: 20, weight: .bold))
 
             VStack(alignment: .leading, spacing: 14) {
-                sectionTitle("Widgets")
-
-                Toggle("Spotify", isOn: $settings.showSpotifyWidget)
-                Toggle("Calendar", isOn: $settings.showCalendarWidget)
-                Toggle("Info tiles", isOn: $settings.showInfoTiles)
-                Toggle("File shelf", isOn: $settings.showFileShelf)
-            }
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 14) {
                 sectionTitle("Panel")
 
                 Toggle("Start pinned", isOn: $settings.startPinned)
@@ -32,26 +21,20 @@ struct PreferencesView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 14) {
-                sectionTitle("Refresh")
+                sectionTitle("Spotify")
 
-                Picker("Interval", selection: $settings.refreshInterval) {
+                Picker("Refresh interval", selection: $settings.refreshInterval) {
                     ForEach(refreshOptions, id: \.self) { option in
                         Text(refreshLabel(for: option)).tag(option)
                     }
                 }
                 .pickerStyle(.segmented)
-
-                Stepper(
-                    "Calendar lookahead: \(settings.calendarLookaheadDays) days",
-                    value: $settings.calendarLookaheadDays,
-                    in: 1...30
-                )
             }
 
             Spacer()
         }
         .padding(24)
-        .frame(width: 430, height: 420, alignment: .topLeading)
+        .frame(width: 430, height: 260, alignment: .topLeading)
     }
 
     private func sectionTitle(_ title: String) -> some View {

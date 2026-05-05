@@ -1,18 +1,15 @@
 # NotchShelf
 
-NotchShelf is a native macOS utility experiment inspired by the idea of using the notch/menu-bar area as a small command surface.
+NotchShelf is a native macOS Spotify notch widget.
 
-This project does not copy NotchNook's branding, assets, or UI. It starts with a from-scratch AppKit/SwiftUI implementation:
+This project does not copy NotchNook's branding, assets, or UI. It is a from-scratch AppKit/SwiftUI implementation focused on Spotify:
 
 - Floating top-center panel
 - Collapsed notch-style pill
-- Expandable utility surface
+- Expandable Spotify player
 - Menu bar status item
 - Multi-screen repositioning
 - Spotify artwork and playback controls
-- Calendar next-event widget with meeting links
-- Clipboard and active-app widgets
-- Drag-and-drop file shelf
 
 ## Requirements
 
@@ -83,7 +80,7 @@ SwiftPM is also configured:
 swift run NotchShelf
 ```
 
-The app runs as an accessory app. Use the menu bar icon to expand, collapse, clear shelf files, or quit.
+The app runs as an accessory app. Use the menu bar icon to expand, collapse, open Preferences, or quit.
 
 ## Preferences
 
@@ -91,15 +88,10 @@ Use the menu bar item to open Preferences. Settings are stored in `UserDefaults`
 
 Current controls:
 
-- Spotify widget
-- Calendar widget
-- Info tiles
-- File shelf
 - Start pinned
 - Collapse after hover
 - Show on top hover
 - Refresh interval
-- Calendar lookahead
 
 When "Show on top hover" is enabled, NotchShelf hides itself until the pointer reaches the top-center notch/menu-bar area.
 
@@ -113,21 +105,10 @@ If permission is denied, allow access in:
 System Settings > Privacy & Security > Automation
 ```
 
-## Calendar Widget
-
-The Calendar widget uses EventKit to show your next upcoming event. Use the widget's allow button to grant access when macOS asks for Calendar permission.
-
-If permission is denied, allow access in:
-
-```text
-System Settings > Privacy & Security > Calendars
-```
-
 ## Next Build Steps
 
 - Add launch-at-login support
 - Add Apple Music / system Now Playing support
 - Add keyboard shortcut support
-- Add settings storage
 - Package as a signed `.app`/`.dmg`
 - Add a full Xcode project once Xcode is selected instead of Command Line Tools

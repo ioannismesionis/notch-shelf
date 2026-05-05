@@ -15,7 +15,7 @@ final class NotchPanelController: NSObject {
     private var suppressAutoShowUntilPointerExit = false
 
     private let collapsedSize = CGSize(width: 310, height: 38)
-    private let expandedWidth: CGFloat = 520
+    private let expandedSize = CGSize(width: 520, height: 166)
     private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
     override init() {
@@ -101,14 +101,6 @@ final class NotchPanelController: NSObject {
         }
     }
 
-    func open(_ item: ShelfItem) {
-        NSWorkspace.shared.open(item.url)
-    }
-
-    func reveal(_ item: ShelfItem) {
-        NSWorkspace.shared.activateFileViewerSelecting([item.url])
-    }
-
     private func configurePanel() {
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -125,20 +117,13 @@ final class NotchPanelController: NSObject {
             setHovering: { [weak self] isHovering in self?.setHovering(isHovering) },
             toggleExpanded: { [weak self] in self?.toggleExpanded() },
             togglePinned: { [weak self] in self?.togglePinned() },
-            addFiles: { [weak self] urls in self?.store.addFiles(urls) },
-            clearFiles: { [weak self] in self?.store.clearFiles() },
-            openFile: { [weak self] item in self?.open(item) },
-            revealFile: { [weak self] item in self?.reveal(item) },
             spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
             spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
             spotifyNext: { [weak self] in self?.store.spotifyNext() },
-            spotifyOpen: { [weak self] in self?.store.openSpotify() },
-            calendarRequestAccess: { [weak self] in self?.store.requestCalendarAccess() },
-            calendarOpenEvent: { [weak self] event in self?.store.openCalendarEvent(event) },
-            calendarOpenApp: { [weak self] in self?.store.openCalendarApp() }
+            spotifyOpen: { [weak self] in self?.store.openSpotify() }
         )
 
-        panel.contentView = NSHostingView(rootView: NotchShelfRootView(store: store, settings: settings, actions: actions))
+        panel.contentView = NSHostingView(rootView: NotchShelfRootView(store: store, actions: actions))
     }
 
     private func bindStore() {
@@ -153,7 +138,7 @@ final class NotchPanelController: NSObject {
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
                     self?.store.isPinned = self?.settings.startPinned ?? false
-                    self?.restartRefreshTimer(forceCalendar: true)
+                    self?.restartRefreshTimer()
                     self?.evaluatePointerHover()
                     self?.updateFrame(animated: true)
                 }
@@ -183,9 +168,9 @@ final class NotchPanelController: NSObject {
         }
     }
 
-    private func restartRefreshTimer(forceCalendar: Bool = false) {
+    private func restartRefreshTimer() {
         refreshTimer?.invalidate()
-        store.refresh(forceCalendar: forceCalendar)
+        store.refresh()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: max(1.0, settings.refreshInterval), repeats: true) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.store.refresh()
@@ -200,11 +185,9 @@ final class NotchPanelController: NSObject {
     }
 
     private func updateFrame(animated: Bool) {
-        let size = store.isExpanded ? expandedSize() : collapsedSize
+        let size = store.isExpanded ? expandedSize : collapsedSize
         let screen = screenForCurrentPointer()
         let topPadding: CGFloat = store.isExpanded ? 9 : 6
-
-        store.currentScreenName = screen.localizedName
 
         let origin = CGPoint(
             x: screen.frame.midX - size.width / 2,
@@ -308,28 +291,6 @@ final class NotchPanelController: NSObject {
         isHidingPanel = false
         panel.orderOut(nil)
         panel.alphaValue = 1
-    }
-
-    private func expandedSize() -> CGSize {
-        var height: CGFloat = 72
-
-        if settings.showSpotifyWidget {
-            height += 109
-        }
-
-        if settings.showCalendarWidget {
-            height += 101
-        }
-
-        if settings.showInfoTiles {
-            height += 126
-        }
-
-        if settings.showFileShelf {
-            height += 112
-        }
-
-        return CGSize(width: expandedWidth, height: max(188, height))
     }
 
     private func screenForCurrentPointer() -> NSScreen {

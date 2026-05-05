@@ -28,8 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Preferences...", action: #selector(showPreferences), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Clear File Shelf", action: #selector(clearShelf), keyEquivalent: "k"))
-        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit NotchShelf", action: #selector(quit), keyEquivalent: "q"))
 
         menu.items.forEach { $0.target = self }
@@ -47,10 +45,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func collapse() {
         panelController?.collapse()
-    }
-
-    @objc private func clearShelf() {
-        panelController?.store.clearFiles()
     }
 
     @objc private func showPreferences() {
