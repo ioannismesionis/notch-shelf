@@ -11,6 +11,8 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Spotify-branded empty and fallback states
 - Menu bar status item
 - Multi-screen repositioning
+- Launch-at-login option
+- Option-Space global shortcut
 - Spotify artwork, seek, volume, shuffle, repeat, playback controls, and Liked Songs heart
 
 ## Requirements
@@ -91,6 +93,8 @@ Use the menu bar item to open Preferences. Settings are stored in `UserDefaults`
 Current controls:
 
 - Start pinned
+- Open at login
+- Option-Space shortcut
 - Refresh interval
 - Spotify Client ID
 
@@ -128,9 +132,6 @@ Playback controls include previous, play/pause, next, shuffle, repeat, a seekabl
 
 ## Next Build Steps
 
-- Add launch-at-login support
 - Add Apple Music / system Now Playing support
-- Add seek and volume controls
-- Add keyboard shortcut support
 - Package as a signed `.app`/`.dmg`
 - Add a full Xcode project once Xcode is selected instead of Command Line Tools

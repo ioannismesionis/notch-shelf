@@ -1,15 +1,19 @@
 import AppKit
+import Combine
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var panelController: NotchPanelController?
     private var preferencesWindowController: PreferencesWindowController?
+    private let keyboardShortcutController = KeyboardShortcutController.shared
+    private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let controller = NotchPanelController()
         self.panelController = controller
 
         configureStatusItem()
+        configureKeyboardShortcut()
         controller.show()
     }
 
@@ -33,6 +37,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.items.forEach { $0.target = self }
         item.menu = menu
         statusItem = item
+    }
+
+    private func configureKeyboardShortcut() {
+        keyboardShortcutController.onHotKey = { [weak self] in
+            self?.panelController?.toggleFromKeyboardShortcut()
+        }
+
+        AppSettings.shared.$globalShortcutEnabled
+            .removeDuplicates()
+            .sink { [weak self] isEnabled in
+                self?.keyboardShortcutController.setEnabled(isEnabled)
+            }
+            .store(in: &cancellables)
     }
 
     @objc private func toggleExpanded() {

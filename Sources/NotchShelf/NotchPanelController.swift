@@ -53,6 +53,22 @@ final class NotchPanelController: NSObject {
         store.isExpanded ? collapse() : expand()
     }
 
+    func toggleFromKeyboardShortcut() {
+        collapseTimer?.invalidate()
+
+        if panel.isVisible, store.isExpanded {
+            if store.isPinned {
+                collapse()
+            } else {
+                suppressAutoShowUntilPointerExit = true
+                hidePanel(animated: true, collapseAfterHide: true)
+            }
+            return
+        }
+
+        expand()
+    }
+
     func expand() {
         collapseTimer?.invalidate()
         store.isExpanded = true

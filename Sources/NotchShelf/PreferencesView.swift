@@ -5,6 +5,10 @@ struct PreferencesView: View {
 
     private let refreshOptions: [Double] = [1, 2, 5, 10]
 
+    @State private var launchAtLoginEnabled = LaunchAtLoginController.isEnabled
+    @State private var launchAtLoginStatus = LaunchAtLoginController.statusText
+    @State private var launchAtLoginError: String?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Preferences")
@@ -14,6 +18,23 @@ struct PreferencesView: View {
                 sectionTitle("Panel")
 
                 Toggle("Start pinned", isOn: $settings.startPinned)
+                Toggle("Open at login", isOn: launchAtLoginBinding)
+
+                Text("Launch at login: \(launchAtLoginStatus)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(launchAtLoginError == nil ? Color.secondary : Color.red)
+
+                if let launchAtLoginError {
+                    Text(launchAtLoginError)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+
+                Toggle("Option-Space shortcut", isOn: $settings.globalShortcutEnabled)
+
+                Text("Shows NotchShelf expanded. Press again to hide or collapse it.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
 
             Divider()
@@ -39,7 +60,34 @@ struct PreferencesView: View {
             Spacer()
         }
         .padding(24)
-        .frame(width: 430, height: 300, alignment: .topLeading)
+        .frame(width: 430, height: 400, alignment: .topLeading)
+        .onAppear(perform: refreshLaunchAtLoginState)
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLoginEnabled },
+            set: { enabled in
+                updateLaunchAtLogin(enabled)
+            }
+        )
+    }
+
+    private func updateLaunchAtLogin(_ enabled: Bool) {
+        launchAtLoginError = nil
+
+        do {
+            try LaunchAtLoginController.setEnabled(enabled)
+        } catch {
+            launchAtLoginError = error.localizedDescription
+        }
+
+        refreshLaunchAtLoginState()
+    }
+
+    private func refreshLaunchAtLoginState() {
+        launchAtLoginEnabled = LaunchAtLoginController.isEnabled
+        launchAtLoginStatus = LaunchAtLoginController.statusText
     }
 
     private func sectionTitle(_ title: String) -> some View {
