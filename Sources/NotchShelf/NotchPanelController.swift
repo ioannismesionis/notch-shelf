@@ -97,14 +97,6 @@ final class NotchPanelController: NSObject {
         }
     }
 
-    func hideFromControl() {
-        guard !store.isPinned else { return }
-
-        collapseTimer?.invalidate()
-        suppressAutoShowUntilPointerExit = true
-        hidePanel(animated: true, collapseAfterHide: true)
-    }
-
     private func configurePanel() {
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -121,7 +113,6 @@ final class NotchPanelController: NSObject {
             setHovering: { [weak self] isHovering in self?.setHovering(isHovering) },
             toggleExpanded: { [weak self] in self?.toggleExpanded() },
             togglePinned: { [weak self] in self?.togglePinned() },
-            hidePanel: { [weak self] in self?.hideFromControl() },
             spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
             spotifyPrevious: { [weak self] in self?.store.spotifyPrevious() },
             spotifyNext: { [weak self] in self?.store.spotifyNext() },

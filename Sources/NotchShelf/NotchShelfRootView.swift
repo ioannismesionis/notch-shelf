@@ -25,7 +25,7 @@ struct NotchShelfRootView: View {
                     endPoint: .bottomTrailing
                 )
 
-                Color.black.opacity(0.20)
+                Color.black.opacity(0.14)
 
                 if store.isExpanded {
                     ExpandedSpotifyView(store: store, actions: actions, theme: theme)
@@ -42,11 +42,11 @@ struct NotchShelfRootView: View {
             )
             .overlay(
                 shape
-                    .strokeBorder(Color.black.opacity(0.28), lineWidth: 0.5)
+                    .strokeBorder(Color.black.opacity(0.20), lineWidth: 0.5)
                     .blendMode(.overlay)
             )
             .compositingGroup()
-            .shadow(color: .black.opacity(0.25), radius: 14, x: 0, y: 8)
+            .shadow(color: .black.opacity(0.20), radius: 14, x: 0, y: 8)
             .padding(.top, 2)
             .padding(.horizontal, 10)
             .padding(.bottom, 12)
@@ -137,10 +137,6 @@ private struct ExpandedSpotifyView: View {
                 theme: theme,
                 action: actions.togglePinned
             )
-
-            if !store.isPinned {
-                IconButton(systemName: "xmark", label: "Hide for now", theme: theme, action: actions.hidePanel)
-            }
         }
     }
 }

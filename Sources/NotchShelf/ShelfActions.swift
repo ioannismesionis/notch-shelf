@@ -2,7 +2,6 @@ struct ShelfActions {
     let setHovering: (Bool) -> Void
     let toggleExpanded: () -> Void
     let togglePinned: () -> Void
-    let hidePanel: () -> Void
     let spotifyPlayPause: () -> Void
     let spotifyPrevious: () -> Void
     let spotifyNext: () -> Void
