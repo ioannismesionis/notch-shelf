@@ -14,8 +14,6 @@ struct PreferencesView: View {
                 sectionTitle("Panel")
 
                 Toggle("Start pinned", isOn: $settings.startPinned)
-                Toggle("Collapse after hover", isOn: $settings.collapseOnHoverExit)
-                Toggle("Show on top hover", isOn: $settings.autoShowOnTopHover)
             }
 
             Divider()
@@ -34,7 +32,7 @@ struct PreferencesView: View {
             Spacer()
         }
         .padding(24)
-        .frame(width: 430, height: 260, alignment: .topLeading)
+        .frame(width: 430, height: 220, alignment: .topLeading)
     }
 
     private func sectionTitle(_ title: String) -> some View {

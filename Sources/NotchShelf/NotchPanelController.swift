@@ -42,10 +42,10 @@ final class NotchPanelController: NSObject {
 
     func show() {
         updateFrame(animated: false)
-        if settings.autoShowOnTopHover, !store.isPinned {
-            panel.orderOut(nil)
-        } else {
+        if store.isPinned {
             ensurePanelVisible(animated: false)
+        } else {
+            panel.orderOut(nil)
         }
     }
 
@@ -61,14 +61,11 @@ final class NotchPanelController: NSObject {
 
     func collapse() {
         collapseTimer?.invalidate()
-        if store.isPinned {
-            store.isPinned = false
-            settings.startPinned = false
-        }
-
         store.isExpanded = false
 
-        if settings.autoShowOnTopHover {
+        if store.isPinned {
+            ensurePanelVisible(animated: true)
+        } else {
             suppressAutoShowUntilPointerExit = true
             updateFrame(animated: true)
             hidePanel(animated: true)
@@ -83,7 +80,7 @@ final class NotchPanelController: NSObject {
             return
         }
 
-        guard settings.collapseOnHoverExit, !store.isPinned else { return }
+        guard !store.isPinned else { return }
         collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.collapse()
@@ -137,10 +134,18 @@ final class NotchPanelController: NSObject {
         settings.objectWillChange
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
-                    self?.store.isPinned = self?.settings.startPinned ?? false
-                    self?.restartRefreshTimer()
-                    self?.evaluatePointerHover()
-                    self?.updateFrame(animated: true)
+                    guard let self else { return }
+
+                    self.store.isPinned = self.settings.startPinned
+                    self.restartRefreshTimer()
+
+                    if self.store.isPinned {
+                        self.expand()
+                    } else {
+                        self.evaluatePointerHover()
+                    }
+
+                    self.updateFrame(animated: true)
                 }
             }
             .store(in: &cancellables)
@@ -207,13 +212,6 @@ final class NotchPanelController: NSObject {
     }
 
     private func evaluatePointerHover() {
-        guard settings.autoShowOnTopHover else {
-            if !panel.isVisible {
-                ensurePanelVisible(animated: false)
-            }
-            return
-        }
-
         guard !store.isPinned else {
             if !panel.isVisible {
                 ensurePanelVisible(animated: false)

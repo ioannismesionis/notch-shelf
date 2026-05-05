@@ -98,7 +98,7 @@ private struct ExpandedSpotifyView: View {
 
             IconButton(
                 systemName: store.isPinned ? "pin.fill" : "pin",
-                label: store.isPinned ? "Unpin" : "Pin",
+                label: store.isPinned ? "Hide when pointer leaves" : "Keep visible",
                 action: actions.togglePinned
             )
 
