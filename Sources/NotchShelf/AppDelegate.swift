@@ -19,12 +19,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func configureStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(
-            systemSymbolName: "rectangle.topthird.inset.filled",
-            accessibilityDescription: "NotchShelf"
-        )
-        item.button?.target = self
-        item.button?.action = #selector(toggleExpanded)
+        if let button = item.button {
+            if let image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "NotchShelf") {
+                image.isTemplate = true
+                button.image = image
+            } else {
+                button.title = "N"
+                button.font = .systemFont(ofSize: 13, weight: .semibold)
+            }
+
+            button.toolTip = "NotchShelf"
+            button.target = self
+            button.action = #selector(toggleExpanded)
+        }
 
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Expand NotchShelf", action: #selector(expand), keyEquivalent: "e"))
