@@ -162,6 +162,14 @@ private struct ExpandedSpotifyView: View {
                     actions: actions,
                     theme: theme
                 )
+
+                if !store.pinnedPlaylists.isEmpty {
+                    PinnedPlaylistsStrip(
+                        playlists: store.pinnedPlaylists,
+                        theme: theme,
+                        onOpen: actions.spotifyOpenPlaylist
+                    )
+                }
             }
         }
         .padding(.horizontal, 14)
@@ -189,6 +197,60 @@ private struct ExpandedSpotifyView: View {
                 action: actions.togglePinned
             )
         }
+    }
+}
+
+private struct PinnedPlaylistsStrip: View {
+    let playlists: [SpotifyPlaylist]
+    let theme: SpotifyTheme
+    let onOpen: (SpotifyPlaylist) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "music.note.list")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white.opacity(0.58))
+
+            ForEach(playlists.prefix(5)) { playlist in
+                PinnedPlaylistButton(playlist: playlist, theme: theme) {
+                    onOpen(playlist)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(height: 34)
+    }
+}
+
+private struct PinnedPlaylistButton: View {
+    let playlist: SpotifyPlaylist
+    let theme: SpotifyTheme
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 8, weight: .bold))
+
+                Text(playlist.name)
+                    .font(.system(size: 11, weight: .bold))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: 108)
+            .frame(height: 28)
+            .padding(.horizontal, 9)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(isHovering ? 0.96 : 0.78))
+        .background(isHovering ? theme.controlHoverBackground : theme.controlBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .scaleEffect(isHovering ? 1.04 : 1)
+        .animation(.easeInOut(duration: 0.13), value: isHovering)
+        .onHover { isHovering = $0 }
+        .help("Open \(playlist.name)")
     }
 }
 

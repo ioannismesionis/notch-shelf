@@ -17,6 +17,7 @@ final class NotchPanelController: NSObject {
 
     private let collapsedSize = CGSize(width: 330, height: 56)
     private let expandedSize = CGSize(width: 580, height: 204)
+    private let expandedWithPlaylistsSize = CGSize(width: 610, height: 254)
     private let setupSize = CGSize(width: 640, height: 438)
     private let topHoverTriggerSize = CGSize(width: 380, height: 34)
 
@@ -145,6 +146,7 @@ final class NotchPanelController: NSObject {
             spotifyToggleShuffle: { [weak self] in self?.store.spotifyToggleShuffle() },
             spotifyToggleRepeat: { [weak self] in self?.store.spotifyToggleRepeat() },
             spotifyAuthorizeLibrary: { [weak self] in self?.store.spotifyAuthorizeLibrary() },
+            spotifyOpenPlaylist: { [weak self] playlist in self?.store.openPlaylist(playlist) },
             openPreferences: { [weak self] in self?.openPreferences?() },
             openAutomationSettings: { Self.openAutomationSettings() },
             enableLaunchAtLogin: { [weak self] in self?.enableLaunchAtLogin() },
@@ -374,7 +376,7 @@ final class NotchPanelController: NSObject {
     }
 
     private func targetFrame() -> CGRect {
-        let size = store.isFirstRunSetupVisible ? setupSize : (store.isExpanded ? expandedSize : collapsedSize)
+        let size = targetSize()
         let screen = screenForCurrentPointer()
         let topPadding: CGFloat = store.isExpanded ? 4 : 2
 
@@ -384,6 +386,18 @@ final class NotchPanelController: NSObject {
         )
 
         return CGRect(origin: origin, size: size)
+    }
+
+    private func targetSize() -> CGSize {
+        if store.isFirstRunSetupVisible {
+            return setupSize
+        }
+
+        if store.isExpanded {
+            return store.pinnedPlaylists.isEmpty ? expandedSize : expandedWithPlaylistsSize
+        }
+
+        return collapsedSize
     }
 
     private func compressedFrame(from frame: CGRect) -> CGRect {

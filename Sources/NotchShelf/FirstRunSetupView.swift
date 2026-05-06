@@ -66,7 +66,7 @@ struct FirstRunSetupView: View {
                 )
 
                 SetupRow(
-                    title: "Liked Songs",
+                    title: "Spotify access",
                     detail: libraryDetail,
                     state: libraryState,
                     buttonTitle: "Connect",
@@ -144,7 +144,7 @@ struct FirstRunSetupView: View {
             return "Needs a Client ID first."
         }
 
-        return "Connect to save tracks to Liked Songs."
+        return "Connect Liked Songs and playlists."
     }
 
     private var libraryState: SetupRow.StepState {

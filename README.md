@@ -15,6 +15,7 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Option-Space global shortcut
 - First-run setup checklist
 - Custom app icon
+- Pinned Spotify playlist shortcuts
 - Spotify artwork, seek, volume, shuffle, repeat, playback controls, and Liked Songs heart
 
 ## Requirements
@@ -112,6 +113,7 @@ Current controls:
 - Show first-run setup
 - Refresh interval
 - Spotify Client ID
+- Pinned playlists
 
 The pin controls persistence: pinned keeps NotchShelf visible when the pointer leaves; unpinned hides it after the pointer leaves the top-center notch/menu-bar area and opens it expanded when the pointer returns.
 
@@ -140,10 +142,12 @@ notchshelf://spotify-auth
 Requested Spotify scopes:
 
 ```text
-user-library-read user-library-modify
+user-library-read user-library-modify playlist-read-private playlist-read-collaborative
 ```
 
 Playback controls include previous, play/pause, next, shuffle, repeat, a seekable progress bar, and a compact volume slider.
+
+Pinned playlists can be loaded and selected from Preferences. The expanded notch shows up to five playlist shortcuts.
 
 ## Next Build Steps
 

@@ -9,7 +9,7 @@ final class PreferencesWindowController: NSWindowController {
         window.title = "NotchShelf Preferences"
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 430, height: 430))
+        window.setContentSize(NSSize(width: 500, height: 620))
         window.center()
 
         super.init(window: window)

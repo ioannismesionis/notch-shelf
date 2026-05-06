@@ -10,6 +10,7 @@ final class ShelfStore: ObservableObject {
     @Published var isSpotifyLibraryConnected = false
     @Published var isSpotifyAppInstalled = false
     @Published var launchAtLoginStatusText = LaunchAtLoginController.statusText
+    @Published var pinnedPlaylists: [SpotifyPlaylist]
 
     private let spotifyController = SpotifyController()
     private let spotifyWebAPIClient = SpotifyWebAPIClient()
@@ -22,6 +23,7 @@ final class ShelfStore: ObservableObject {
     init(settings: AppSettings = .shared) {
         self.settings = settings
         isFirstRunSetupVisible = !settings.firstRunSetupCompleted
+        pinnedPlaylists = settings.pinnedPlaylists
         isPinned = settings.startPinned
         refreshSetupStatus()
     }
@@ -48,6 +50,10 @@ final class ShelfStore: ObservableObject {
 
     func openSpotify() {
         spotifyController.openSpotify()
+    }
+
+    func openPlaylist(_ playlist: SpotifyPlaylist) {
+        spotifyController.openSpotifyURI(playlist.uri)
     }
 
     func spotifySeek(to progress: Double) {
@@ -151,9 +157,10 @@ final class ShelfStore: ObservableObject {
     }
 
     func refreshSetupStatus() {
-        isSpotifyLibraryConnected = spotifyWebAPIClient.hasToken()
+        isSpotifyLibraryConnected = spotifyWebAPIClient.hasRequiredScopes()
         isSpotifyAppInstalled = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.spotify.client") != nil
         launchAtLoginStatusText = LaunchAtLoginController.statusText
+        pinnedPlaylists = settings.pinnedPlaylists
     }
 
     var hasSpotifyClientID: Bool {

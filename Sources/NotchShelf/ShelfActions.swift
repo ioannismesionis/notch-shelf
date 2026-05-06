@@ -12,6 +12,7 @@ struct ShelfActions {
     let spotifyToggleShuffle: () -> Void
     let spotifyToggleRepeat: () -> Void
     let spotifyAuthorizeLibrary: () -> Void
+    let spotifyOpenPlaylist: (SpotifyPlaylist) -> Void
     let openPreferences: () -> Void
     let openAutomationSettings: () -> Void
     let enableLaunchAtLogin: () -> Void

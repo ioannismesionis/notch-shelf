@@ -105,6 +105,11 @@ final class SpotifyController {
         }
     }
 
+    func openSpotifyURI(_ uri: String) {
+        guard let url = URL(string: uri) else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     private var isSpotifyRunning: Bool {
         NSWorkspace.shared.runningApplications.contains { app in
             app.bundleIdentifier == "com.spotify.client"

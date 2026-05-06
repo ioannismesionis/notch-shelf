@@ -8,6 +8,12 @@ final class SpotifyWebAPIClient: NSObject {
     typealias ResultHandler<T> = (Result<T, Error>) -> Void
 
     static let redirectURI = "notchshelf://spotify-auth"
+    static let requiredScopes = [
+        "user-library-read",
+        "user-library-modify",
+        "playlist-read-private",
+        "playlist-read-collaborative"
+    ]
 
     private let tokenStore = SpotifyTokenStore()
     private var authSession: ASWebAuthenticationSession?
@@ -16,6 +22,12 @@ final class SpotifyWebAPIClient: NSObject {
 
     func hasToken() -> Bool {
         tokenStore.load() != nil
+    }
+
+    func hasRequiredScopes() -> Bool {
+        guard let token = tokenStore.load() else { return false }
+        let grantedScopes = Set(token.scope.split(separator: " ").map(String.init))
+        return Self.requiredScopes.allSatisfy { grantedScopes.contains($0) }
     }
 
     func authorize(clientID: String, completion: @escaping ResultHandler<Void>) {
@@ -30,7 +42,7 @@ final class SpotifyWebAPIClient: NSObject {
             URLQueryItem(name: "client_id", value: clientID),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "redirect_uri", value: Self.redirectURI),
-            URLQueryItem(name: "scope", value: "user-library-read user-library-modify"),
+            URLQueryItem(name: "scope", value: Self.requiredScopes.joined(separator: " ")),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
             URLQueryItem(name: "code_challenge", value: Self.codeChallenge(for: verifier)),
             URLQueryItem(name: "state", value: state)
@@ -105,6 +117,30 @@ final class SpotifyWebAPIClient: NSObject {
 
     func remove(uri: String, clientID: String, completion: @escaping ResultHandler<Void>) {
         updateLibrary(uri: uri, method: "DELETE", clientID: clientID, completion: completion)
+    }
+
+    func playlists(clientID: String, completion: @escaping ResultHandler<[SpotifyPlaylist]>) {
+        authorizedRequest(
+            endpoint: "https://api.spotify.com/v1/me/playlists",
+            method: "GET",
+            queryItems: [
+                URLQueryItem(name: "limit", value: "50"),
+                URLQueryItem(name: "offset", value: "0")
+            ],
+            clientID: clientID
+        ) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let response = try JSONDecoder().decode(SpotifyPlaylistsResponse.self, from: data)
+                    completion(.success(response.items.map(\.playlist)))
+                } catch {
+                    completion(.failure(error))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
     }
 
     private func updateLibrary(
@@ -380,6 +416,55 @@ private struct SpotifyTokenResponse: Decodable {
         case expiresIn = "expires_in"
         case scope
     }
+}
+
+private struct SpotifyPlaylistsResponse: Decodable {
+    let items: [SpotifyPlaylistItem]
+}
+
+private struct SpotifyPlaylistItem: Decodable {
+    let id: String
+    let name: String
+    let uri: String
+    let owner: SpotifyPlaylistOwner?
+    let tracks: SpotifyPlaylistTracks?
+    let images: [SpotifyPlaylistImage]
+
+    var playlist: SpotifyPlaylist {
+        SpotifyPlaylist(
+            id: id,
+            name: name,
+            uri: uri,
+            ownerName: owner?.displayName ?? "",
+            trackCount: tracks?.total ?? 0,
+            artworkURL: images.first?.url
+        )
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case uri
+        case owner
+        case tracks
+        case images
+    }
+}
+
+private struct SpotifyPlaylistOwner: Decodable {
+    let displayName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+    }
+}
+
+private struct SpotifyPlaylistTracks: Decodable {
+    let total: Int
+}
+
+private struct SpotifyPlaylistImage: Decodable {
+    let url: String
 }
 
 private struct SpotifyAuthToken: Codable {

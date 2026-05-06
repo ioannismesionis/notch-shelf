@@ -23,6 +23,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(firstRunSetupCompleted, forKey: Keys.firstRunSetupCompleted) }
     }
 
+    @Published var pinnedPlaylists: [SpotifyPlaylist] {
+        didSet { savePinnedPlaylists() }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -41,6 +45,21 @@ final class AppSettings: ObservableObject {
         spotifyClientID = defaults.string(forKey: Keys.spotifyClientID) ?? ""
         globalShortcutEnabled = defaults.bool(forKey: Keys.globalShortcutEnabled)
         firstRunSetupCompleted = defaults.bool(forKey: Keys.firstRunSetupCompleted)
+        pinnedPlaylists = Self.loadPinnedPlaylists(from: defaults)
+    }
+
+    private static func loadPinnedPlaylists(from defaults: UserDefaults) -> [SpotifyPlaylist] {
+        guard let data = defaults.data(forKey: Keys.pinnedPlaylists),
+              let playlists = try? JSONDecoder().decode([SpotifyPlaylist].self, from: data) else {
+            return []
+        }
+
+        return playlists
+    }
+
+    private func savePinnedPlaylists() {
+        guard let data = try? JSONEncoder().encode(pinnedPlaylists) else { return }
+        defaults.set(data, forKey: Keys.pinnedPlaylists)
     }
 }
 
@@ -50,4 +69,5 @@ private enum Keys {
     static let spotifyClientID = "spotifyClientID"
     static let globalShortcutEnabled = "globalShortcutEnabled"
     static let firstRunSetupCompleted = "firstRunSetupCompleted"
+    static let pinnedPlaylists = "pinnedPlaylists"
 }

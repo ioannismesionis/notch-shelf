@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 
 enum SpotifyAvailability: Equatable {
     case available
@@ -116,5 +117,22 @@ struct SpotifyStatus {
 
     var isAvailable: Bool {
         availability == .available
+    }
+}
+
+struct SpotifyPlaylist: Codable, Equatable, Identifiable {
+    var id: String
+    var name: String
+    var uri: String
+    var ownerName: String
+    var trackCount: Int
+    var artworkURL: String?
+
+    var subtitle: String {
+        if ownerName.isEmpty {
+            return "\(trackCount) tracks"
+        }
+
+        return "\(ownerName) • \(trackCount) tracks"
     }
 }
