@@ -1,5 +1,21 @@
 import Foundation
 
+enum PanelBackgroundMode: String, CaseIterable, Identifiable {
+    case transparent
+    case black
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .transparent:
+            return "Transparent"
+        case .black:
+            return "Black"
+        }
+    }
+}
+
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
@@ -17,6 +33,10 @@ final class AppSettings: ObservableObject {
 
     @Published var globalShortcutEnabled: Bool {
         didSet { defaults.set(globalShortcutEnabled, forKey: Keys.globalShortcutEnabled) }
+    }
+
+    @Published var panelBackgroundMode: PanelBackgroundMode {
+        didSet { defaults.set(panelBackgroundMode.rawValue, forKey: Keys.panelBackgroundMode) }
     }
 
     @Published var firstRunSetupCompleted: Bool {
@@ -37,6 +57,7 @@ final class AppSettings: ObservableObject {
             Keys.refreshInterval: 2.0,
             Keys.spotifyClientID: "",
             Keys.globalShortcutEnabled: true,
+            Keys.panelBackgroundMode: PanelBackgroundMode.transparent.rawValue,
             Keys.firstRunSetupCompleted: false
         ])
 
@@ -44,6 +65,9 @@ final class AppSettings: ObservableObject {
         refreshInterval = defaults.double(forKey: Keys.refreshInterval)
         spotifyClientID = defaults.string(forKey: Keys.spotifyClientID) ?? ""
         globalShortcutEnabled = defaults.bool(forKey: Keys.globalShortcutEnabled)
+        panelBackgroundMode = PanelBackgroundMode(
+            rawValue: defaults.string(forKey: Keys.panelBackgroundMode) ?? ""
+        ) ?? .transparent
         firstRunSetupCompleted = defaults.bool(forKey: Keys.firstRunSetupCompleted)
         pinnedPlaylists = Self.loadPinnedPlaylists(from: defaults)
     }
@@ -68,6 +92,7 @@ private enum Keys {
     static let refreshInterval = "refreshInterval"
     static let spotifyClientID = "spotifyClientID"
     static let globalShortcutEnabled = "globalShortcutEnabled"
+    static let panelBackgroundMode = "panelBackgroundMode"
     static let firstRunSetupCompleted = "firstRunSetupCompleted"
     static let pinnedPlaylists = "pinnedPlaylists"
 }

@@ -59,6 +59,13 @@ struct PreferencesView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
 
+            Picker("Panel background", selection: $settings.panelBackgroundMode) {
+                ForEach(PanelBackgroundMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+
             Button("Show first-run setup") {
                 settings.firstRunSetupCompleted = false
             }

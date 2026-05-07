@@ -3,6 +3,7 @@ import SwiftUI
 struct NotchShelfRootView: View {
     @ObservedObject var store: ShelfStore
     let actions: ShelfActions
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
         let cornerRadius: CGFloat = store.isExpanded ? 28 : 21
@@ -13,19 +14,7 @@ struct NotchShelfRootView: View {
             Color.clear
 
             ZStack {
-                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-
-                LinearGradient(
-                    colors: [
-                        theme.surfaceTop,
-                        theme.surfaceMiddle,
-                        theme.surfaceBottom
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                Color.black.opacity(0.14)
+                panelBackground(theme: theme)
 
                 if store.isExpanded {
                     ExpandedSpotifyView(store: store, actions: actions, theme: theme)
@@ -55,6 +44,38 @@ struct NotchShelfRootView: View {
         .animation(.easeInOut(duration: 0.22), value: store.spotifyStatus.track?.artworkURL ?? "")
         .onHover(perform: actions.setHovering)
     }
+
+    @ViewBuilder
+    private func panelBackground(theme: SpotifyTheme) -> some View {
+        switch settings.panelBackgroundMode {
+        case .transparent:
+            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+
+            LinearGradient(
+                colors: [
+                    theme.surfaceTop,
+                    theme.surfaceMiddle,
+                    theme.surfaceBottom
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Color.black.opacity(0.14)
+        case .black:
+            Color.black.opacity(0.92)
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.black.opacity(0.06),
+                    Color.black.opacity(0.22)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
 }
 
 private struct CollapsedSpotifyPillView: View {
@@ -64,8 +85,8 @@ private struct CollapsedSpotifyPillView: View {
     @State private var isHovering = false
 
     var body: some View {
-        VStack(spacing: 9) {
-            ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 9) {
                 if let track = store.spotifyStatus.track {
                     AlbumArtworkView(track: track)
                         .frame(width: 68, height: 68)
@@ -78,62 +99,57 @@ private struct CollapsedSpotifyPillView: View {
                         .overlay(SpotifyLogoView(size: 34))
                 }
 
-                MiniControlButton(
-                    systemName: "arrow.up.left.and.arrow.down.right",
-                    label: "Expand",
-                    theme: theme,
-                    action: actions.toggleExpanded
-                )
-                .offset(x: 23, y: 4)
-            }
-            .frame(height: 72)
+                HStack(spacing: 9) {
+                    if let track = store.spotifyStatus.track {
+                        MiniControlButton(
+                            systemName: "backward.fill",
+                            label: "Previous",
+                            theme: theme,
+                            action: actions.spotifyPrevious
+                        )
 
-            HStack(spacing: 9) {
+                        MiniControlButton(
+                            systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
+                            label: track.playbackState.isPlaying ? "Pause" : "Play",
+                            isPrimary: true,
+                            theme: theme,
+                            action: actions.spotifyPlayPause
+                        )
+
+                        MiniControlButton(
+                            systemName: "forward.fill",
+                            label: "Next",
+                            theme: theme,
+                            action: actions.spotifyNext
+                        )
+                    } else {
+                        MiniControlButton(
+                            systemName: "arrow.up.forward.app",
+                            label: collapsedEmptyText,
+                            isPrimary: true,
+                            theme: theme,
+                            action: actions.spotifyOpen
+                        )
+                    }
+                }
+
                 if let track = store.spotifyStatus.track {
-                    MiniControlButton(
-                        systemName: "backward.fill",
-                        label: "Previous",
-                        theme: theme,
-                        action: actions.spotifyPrevious
-                    )
-
-                    MiniControlButton(
-                        systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
-                        label: track.playbackState.isPlaying ? "Pause" : "Play",
-                        isPrimary: true,
-                        theme: theme,
-                        action: actions.spotifyPlayPause
-                    )
-
-                    MiniControlButton(
-                        systemName: "forward.fill",
-                        label: "Next",
-                        theme: theme,
-                        action: actions.spotifyNext
-                    )
+                    Text(track.title)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.66))
+                        .lineLimit(1)
+                        .frame(maxWidth: 128)
                 } else {
-                    MiniControlButton(
-                        systemName: "arrow.up.forward.app",
-                        label: collapsedEmptyText,
-                        isPrimary: true,
-                        theme: theme,
-                        action: actions.spotifyOpen
-                    )
+                    Text(collapsedEmptyText)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.66))
+                        .lineLimit(1)
                 }
             }
 
-            if let track = store.spotifyStatus.track {
-                Text(track.title)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.66))
-                    .lineLimit(1)
-                    .frame(maxWidth: 128)
-            } else {
-                Text(collapsedEmptyText)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.66))
-                    .lineLimit(1)
-            }
+            MiniExpandButton(theme: theme, action: actions.toggleExpanded)
+                .padding(.top, 5)
+                .padding(.trailing, 7)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, 8)
@@ -154,6 +170,32 @@ private struct CollapsedSpotifyPillView: View {
         default:
             return "Nothing playing"
         }
+    }
+}
+
+private struct MiniExpandButton: View {
+    let theme: SpotifyTheme
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.up")
+                .font(.system(size: 9, weight: .heavy))
+                .frame(width: 24, height: 22)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(isHovering ? 0.98 : 0.74))
+        .background(isHovering ? theme.controlHoverBackground : Color.black.opacity(0.24))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+        )
+        .scaleEffect(isHovering ? 1.08 : 1)
+        .animation(.easeInOut(duration: 0.13), value: isHovering)
+        .onHover { isHovering = $0 }
+        .help("Expand")
     }
 }
 

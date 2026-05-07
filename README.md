@@ -111,6 +111,7 @@ Current controls:
 - Start pinned
 - Open at login
 - Option-Space shortcut
+- Panel background: transparent or black
 - Show first-run setup
 - Refresh interval
 - Spotify Client ID
