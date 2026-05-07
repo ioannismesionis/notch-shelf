@@ -7,6 +7,7 @@ This project does not copy NotchNook's branding, assets, or UI. It is a from-scr
 - Floating top-center panel
 - Collapsed notch-style pill
 - Expandable Spotify player
+- Mini-player collapse mode
 - macOS-style glass visual theme
 - Spotify-branded empty and fallback states
 - Menu bar status item
@@ -116,6 +117,8 @@ Current controls:
 - Pinned playlists
 
 The pin controls persistence: pinned keeps NotchShelf visible when the pointer leaves; unpinned hides it after the pointer leaves the top-center notch/menu-bar area and opens it expanded when the pointer returns.
+
+The expand/collapse button switches between the full Spotify UI and a mini-player with artwork, previous, play/pause, and next controls.
 
 ## Spotify Widget
 
