@@ -118,7 +118,7 @@ Current controls:
 
 The pin controls persistence: pinned keeps NotchShelf visible when the pointer leaves; unpinned hides it after the pointer leaves the top-center notch/menu-bar area and opens it expanded when the pointer returns.
 
-The expand/collapse button switches between the full Spotify UI and a mini-player with artwork, previous, play/pause, and next controls.
+The expand/collapse button switches between the full Spotify UI and a vertical mini-player with larger artwork above previous, play/pause, and next controls.
 
 ## Spotify Widget
 

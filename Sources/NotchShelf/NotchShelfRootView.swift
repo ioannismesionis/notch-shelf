@@ -64,53 +64,81 @@ private struct CollapsedSpotifyPillView: View {
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            if let track = store.spotifyStatus.track {
-                AlbumArtworkView(track: track)
-                    .frame(width: 34, height: 34)
-                    .help("\(track.title) by \(track.artist)")
+        VStack(spacing: 9) {
+            ZStack(alignment: .bottomTrailing) {
+                if let track = store.spotifyStatus.track {
+                    AlbumArtworkView(track: track)
+                        .frame(width: 68, height: 68)
+                        .shadow(color: .black.opacity(0.24), radius: 8, x: 0, y: 5)
+                        .help("\(track.title) by \(track.artist)")
+                } else {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(theme.iconTileBackground)
+                        .frame(width: 68, height: 68)
+                        .overlay(SpotifyLogoView(size: 34))
+                }
 
                 MiniControlButton(
-                    systemName: "backward.fill",
-                    label: "Previous",
+                    systemName: "arrow.up.left.and.arrow.down.right",
+                    label: "Expand",
                     theme: theme,
-                    action: actions.spotifyPrevious
+                    action: actions.toggleExpanded
                 )
+                .offset(x: 23, y: 4)
+            }
+            .frame(height: 72)
 
-                MiniControlButton(
-                    systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
-                    label: track.playbackState.isPlaying ? "Pause" : "Play",
-                    isPrimary: true,
-                    theme: theme,
-                    action: actions.spotifyPlayPause
-                )
+            HStack(spacing: 9) {
+                if let track = store.spotifyStatus.track {
+                    MiniControlButton(
+                        systemName: "backward.fill",
+                        label: "Previous",
+                        theme: theme,
+                        action: actions.spotifyPrevious
+                    )
 
-                MiniControlButton(
-                    systemName: "forward.fill",
-                    label: "Next",
-                    theme: theme,
-                    action: actions.spotifyNext
-                )
-            } else {
-                SpotifyLogoView(size: 24)
+                    MiniControlButton(
+                        systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
+                        label: track.playbackState.isPlaying ? "Pause" : "Play",
+                        isPrimary: true,
+                        theme: theme,
+                        action: actions.spotifyPlayPause
+                    )
 
-                MiniControlButton(
-                    systemName: "arrow.up.forward.app",
-                    label: collapsedEmptyText,
-                    isPrimary: true,
-                    theme: theme,
-                    action: actions.spotifyOpen
-                )
+                    MiniControlButton(
+                        systemName: "forward.fill",
+                        label: "Next",
+                        theme: theme,
+                        action: actions.spotifyNext
+                    )
+                } else {
+                    MiniControlButton(
+                        systemName: "arrow.up.forward.app",
+                        label: collapsedEmptyText,
+                        isPrimary: true,
+                        theme: theme,
+                        action: actions.spotifyOpen
+                    )
+                }
             }
 
-            MiniControlButton(
-                systemName: "arrow.up.left.and.arrow.down.right",
-                label: "Expand",
-                theme: theme,
-                action: actions.toggleExpanded
-            )
+            if let track = store.spotifyStatus.track {
+                Text(track.title)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .lineLimit(1)
+                    .frame(maxWidth: 128)
+            } else {
+                Text(collapsedEmptyText)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .lineLimit(1)
+            }
         }
-        .padding(.horizontal, 13)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 8)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
         .background(isHovering ? theme.controlHoverBackground : Color.clear)
         .scaleEffect(isHovering ? 1.015 : 1)
         .animation(.easeInOut(duration: 0.14), value: isHovering)

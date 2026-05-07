@@ -15,7 +15,7 @@ final class NotchPanelController: NSObject {
     private var isHidingPanel = false
     private var suppressAutoShowUntilPointerExit = false
 
-    private let collapsedSize = CGSize(width: 232, height: 56)
+    private let collapsedSize = CGSize(width: 180, height: 142)
     private let expandedSize = CGSize(width: 580, height: 204)
     private let expandedWithPlaylistsSize = CGSize(width: 610, height: 254)
     private let setupSize = CGSize(width: 640, height: 438)
