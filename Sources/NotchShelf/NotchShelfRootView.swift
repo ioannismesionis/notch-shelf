@@ -85,74 +85,70 @@ private struct CollapsedSpotifyPillView: View {
     @State private var isHovering = false
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: 9) {
+        VStack(spacing: 7) {
+            MiniExpandButton(theme: theme, action: actions.toggleExpanded)
+
+            if let track = store.spotifyStatus.track {
+                AlbumArtworkView(track: track)
+                    .frame(width: 68, height: 68)
+                    .shadow(color: .black.opacity(0.24), radius: 8, x: 0, y: 5)
+                    .help("\(track.title) by \(track.artist)")
+            } else {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(theme.iconTileBackground)
+                    .frame(width: 68, height: 68)
+                    .overlay(SpotifyLogoView(size: 34))
+            }
+
+            HStack(spacing: 9) {
                 if let track = store.spotifyStatus.track {
-                    AlbumArtworkView(track: track)
-                        .frame(width: 68, height: 68)
-                        .shadow(color: .black.opacity(0.24), radius: 8, x: 0, y: 5)
-                        .help("\(track.title) by \(track.artist)")
+                    MiniControlButton(
+                        systemName: "backward.fill",
+                        label: "Previous",
+                        theme: theme,
+                        action: actions.spotifyPrevious
+                    )
+
+                    MiniControlButton(
+                        systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
+                        label: track.playbackState.isPlaying ? "Pause" : "Play",
+                        isPrimary: true,
+                        theme: theme,
+                        action: actions.spotifyPlayPause
+                    )
+
+                    MiniControlButton(
+                        systemName: "forward.fill",
+                        label: "Next",
+                        theme: theme,
+                        action: actions.spotifyNext
+                    )
                 } else {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(theme.iconTileBackground)
-                        .frame(width: 68, height: 68)
-                        .overlay(SpotifyLogoView(size: 34))
-                }
-
-                HStack(spacing: 9) {
-                    if let track = store.spotifyStatus.track {
-                        MiniControlButton(
-                            systemName: "backward.fill",
-                            label: "Previous",
-                            theme: theme,
-                            action: actions.spotifyPrevious
-                        )
-
-                        MiniControlButton(
-                            systemName: track.playbackState.isPlaying ? "pause.fill" : "play.fill",
-                            label: track.playbackState.isPlaying ? "Pause" : "Play",
-                            isPrimary: true,
-                            theme: theme,
-                            action: actions.spotifyPlayPause
-                        )
-
-                        MiniControlButton(
-                            systemName: "forward.fill",
-                            label: "Next",
-                            theme: theme,
-                            action: actions.spotifyNext
-                        )
-                    } else {
-                        MiniControlButton(
-                            systemName: "arrow.up.forward.app",
-                            label: collapsedEmptyText,
-                            isPrimary: true,
-                            theme: theme,
-                            action: actions.spotifyOpen
-                        )
-                    }
-                }
-
-                if let track = store.spotifyStatus.track {
-                    Text(track.title)
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.66))
-                        .lineLimit(1)
-                        .frame(maxWidth: 128)
-                } else {
-                    Text(collapsedEmptyText)
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.66))
-                        .lineLimit(1)
+                    MiniControlButton(
+                        systemName: "arrow.up.forward.app",
+                        label: collapsedEmptyText,
+                        isPrimary: true,
+                        theme: theme,
+                        action: actions.spotifyOpen
+                    )
                 }
             }
 
-            MiniExpandButton(theme: theme, action: actions.toggleExpanded)
-                .padding(.top, 5)
-                .padding(.trailing, 7)
+            if let track = store.spotifyStatus.track {
+                Text(track.title)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .lineLimit(1)
+                    .frame(maxWidth: 128)
+            } else {
+                Text(collapsedEmptyText)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .lineLimit(1)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 8)
+        .padding(.top, 7)
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
         .background(isHovering ? theme.controlHoverBackground : Color.clear)
@@ -182,11 +178,11 @@ private struct MiniExpandButton: View {
         Button(action: action) {
             Image(systemName: "chevron.up")
                 .font(.system(size: 9, weight: .heavy))
-                .frame(width: 24, height: 22)
+                .frame(width: 44, height: 18)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white.opacity(isHovering ? 0.98 : 0.74))
-        .background(isHovering ? theme.controlHoverBackground : Color.black.opacity(0.24))
+        .background(isHovering ? theme.controlHoverBackground : Color.white.opacity(0.08))
         .clipShape(Capsule())
         .overlay(
             Capsule()

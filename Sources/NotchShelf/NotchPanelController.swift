@@ -14,8 +14,9 @@ final class NotchPanelController: NSObject {
     private var pointerTrackingTimer: Timer?
     private var isHidingPanel = false
     private var suppressAutoShowUntilPointerExit = false
+    private var shouldExpandOnNextHover = true
 
-    private let collapsedSize = CGSize(width: 180, height: 142)
+    private let collapsedSize = CGSize(width: 180, height: 162)
     private let expandedSize = CGSize(width: 580, height: 204)
     private let expandedWithPlaylistsSize = CGSize(width: 610, height: 254)
     private let setupSize = CGSize(width: 640, height: 438)
@@ -79,6 +80,7 @@ final class NotchPanelController: NSObject {
     func expand() {
         collapseTimer?.invalidate()
         suppressAutoShowUntilPointerExit = false
+        shouldExpandOnNextHover = true
         store.isExpanded = true
         ensurePanelVisible(animated: true)
     }
@@ -90,6 +92,7 @@ final class NotchPanelController: NSObject {
     func collapseToMiniPlayer() {
         collapseTimer?.invalidate()
         suppressAutoShowUntilPointerExit = true
+        shouldExpandOnNextHover = false
         store.isExpanded = false
         ensurePanelVisible(animated: true)
     }
@@ -303,7 +306,7 @@ final class NotchPanelController: NSObject {
 
         if shouldShow {
             if !panel.isVisible {
-                expand()
+                showPreferredHoverState()
             } else if store.isExpanded {
                 ensurePanelVisible(animated: false)
             }
@@ -337,6 +340,17 @@ final class NotchPanelController: NSObject {
             panel.animator().setFrame(frame, display: true)
             panel.animator().alphaValue = 1
         }
+    }
+
+    private func showPreferredHoverState() {
+        if shouldExpandOnNextHover {
+            expand()
+            return
+        }
+
+        collapseTimer?.invalidate()
+        store.isExpanded = false
+        ensurePanelVisible(animated: true)
     }
 
     private func hidePanel(animated: Bool, collapseAfterHide: Bool = false) {
