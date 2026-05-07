@@ -386,7 +386,7 @@ final class NotchPanelController: NSObject {
     private func targetFrame() -> CGRect {
         let size = targetSize()
         let screen = screenForCurrentPointer()
-        let topPadding: CGFloat = 2
+        let topPadding = targetTopPadding()
 
         let origin = CGPoint(
             x: screen.frame.midX - size.width / 2,
@@ -394,6 +394,16 @@ final class NotchPanelController: NSObject {
         )
 
         return CGRect(origin: origin, size: size)
+    }
+
+    private func targetTopPadding() -> CGFloat {
+        if store.isFirstRunSetupVisible || store.isExpanded {
+            return 2
+        }
+
+        // The collapsed mini-player is short enough to be obscured by the physical notch.
+        // Keep it visibly below the notch while expanded panels still grow from the top edge.
+        return 44
     }
 
     private func targetSize() -> CGSize {
