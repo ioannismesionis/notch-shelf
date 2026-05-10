@@ -63,7 +63,10 @@ struct SpotifyWidgetView: View {
                 VolumeControl(
                     volume: volumeOverride ?? Double(track.volume),
                     theme: theme,
-                    onVolumeChange: { volume in
+                    onVolumePreview: { volume in
+                        volumeOverride = volume
+                    },
+                    onVolumeCommit: { volume in
                         volumeOverride = volume
                         actions.spotifySetVolume(volume)
                     }
@@ -315,6 +318,7 @@ private struct SeekableProgressBar: View {
         .animation(.easeOut(duration: 0.24), value: progress)
         .animation(.easeOut(duration: 0.12), value: transientProgress)
         .help("Click or drag to seek")
+        .panelDragExclusion()
     }
 
     private var displayProgress: Double {
@@ -330,7 +334,9 @@ private struct SeekableProgressBar: View {
 private struct VolumeControl: View {
     let volume: Double
     let theme: SpotifyTheme
-    let onVolumeChange: (Double) -> Void
+    let onVolumePreview: (Double) -> Void
+    let onVolumeCommit: (Double) -> Void
+    @State private var draftVolume: Double?
 
     var body: some View {
         HStack(spacing: 7) {
@@ -341,16 +347,27 @@ private struct VolumeControl: View {
 
             Slider(
                 value: Binding(
-                    get: { volume },
-                    set: onVolumeChange
+                    get: { draftVolume ?? volume },
+                    set: { newValue in
+                        draftVolume = newValue
+                        onVolumePreview(newValue)
+                    }
                 ),
-                in: 0...100
+                in: 0...100,
+                onEditingChanged: { isEditing in
+                    if !isEditing {
+                        let finalVolume = draftVolume ?? volume
+                        draftVolume = nil
+                        onVolumeCommit(finalVolume)
+                    }
+                }
             )
             .controlSize(.mini)
             .tint(theme.progressFill)
         }
         .frame(height: 14)
         .help("Volume")
+        .panelDragExclusion()
     }
 
     private var volumeIcon: String {
@@ -404,6 +421,7 @@ private struct HeartButton: View {
             pulse()
         }
         .help(status.helpText)
+        .panelDragExclusion()
     }
 
     private var buttonBackground: Color {
@@ -460,6 +478,7 @@ private struct SpotifyButton: View {
         .animation(.easeInOut(duration: 0.13), value: isDisabled)
         .onHover { isHovering = $0 }
         .help(label)
+        .panelDragExclusion()
     }
 
     private var iconSize: CGFloat {
@@ -529,5 +548,6 @@ private struct EmptyStateButton: View {
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
         .help(title)
+        .panelDragExclusion()
     }
 }

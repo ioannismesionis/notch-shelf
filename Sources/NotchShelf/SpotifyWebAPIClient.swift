@@ -120,20 +120,40 @@ final class SpotifyWebAPIClient: NSObject {
     }
 
     func playlists(clientID: String, completion: @escaping ResultHandler<[SpotifyPlaylist]>) {
+        fetchPlaylists(clientID: clientID, offset: 0, accumulated: [], completion: completion)
+    }
+
+    private func fetchPlaylists(
+        clientID: String,
+        offset: Int,
+        accumulated: [SpotifyPlaylist],
+        completion: @escaping ResultHandler<[SpotifyPlaylist]>
+    ) {
         authorizedRequest(
             endpoint: "https://api.spotify.com/v1/me/playlists",
             method: "GET",
             queryItems: [
                 URLQueryItem(name: "limit", value: "50"),
-                URLQueryItem(name: "offset", value: "0")
+                URLQueryItem(name: "offset", value: String(offset))
             ],
             clientID: clientID
-        ) { result in
+        ) { [weak self] result in
             switch result {
             case .success(let data):
                 do {
                     let response = try JSONDecoder().decode(SpotifyPlaylistsResponse.self, from: data)
-                    completion(.success(response.items.map(\.playlist)))
+                    let playlists = accumulated + response.items.map(\.playlist)
+
+                    if response.next != nil, !response.items.isEmpty {
+                        self?.fetchPlaylists(
+                            clientID: clientID,
+                            offset: offset + response.items.count,
+                            accumulated: playlists,
+                            completion: completion
+                        )
+                    } else {
+                        completion(.success(playlists))
+                    }
                 } catch {
                     completion(.failure(error))
                 }
@@ -420,6 +440,7 @@ private struct SpotifyTokenResponse: Decodable {
 
 private struct SpotifyPlaylistsResponse: Decodable {
     let items: [SpotifyPlaylistItem]
+    let next: String?
 }
 
 private struct SpotifyPlaylistItem: Decodable {

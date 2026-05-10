@@ -16,6 +16,7 @@ final class NotchPanelController: NSObject {
     private var suppressAutoShowUntilPointerExit = false
     private var shouldExpandOnNextHover = true
     private var manualPanelCenter: CGPoint?
+    private var activeScreenID: CGDirectDisplayID?
     private var dragStartFrame: CGRect?
     private var dragStartMouseLocation: CGPoint?
 
@@ -122,9 +123,11 @@ final class NotchPanelController: NSObject {
         store.isPinned.toggle()
         settings.startPinned = store.isPinned
         if store.isPinned {
+            activateScreen(containing: panel.frame.center)
             expand()
         } else {
             manualPanelCenter = nil
+            activeScreenID = nil
             dragStartFrame = nil
             dragStartMouseLocation = nil
             store.isManuallyPositioned = false
@@ -139,6 +142,7 @@ final class NotchPanelController: NSObject {
         dragStartFrame = panel.frame
         dragStartMouseLocation = NSEvent.mouseLocation
         manualPanelCenter = panel.frame.center
+        activateScreen(containing: panel.frame.center)
 
         if !store.isPinned {
             store.isPinned = true
@@ -157,6 +161,7 @@ final class NotchPanelController: NSObject {
         let screen = screen(containing: mouseLocation)
         let frame = clampedFrame(proposedFrame, on: screen)
 
+        activeScreenID = screenID(for: screen)
         manualPanelCenter = frame.center
         store.isManuallyPositioned = true
         panel.setFrame(frame, display: true)
@@ -175,6 +180,7 @@ final class NotchPanelController: NSObject {
         collapseTimer?.invalidate()
         dragStartFrame = nil
         dragStartMouseLocation = nil
+        activateScreen(containing: panel.frame.center)
         manualPanelCenter = nil
         store.isManuallyPositioned = false
         ensurePanelVisible(animated: true)
@@ -269,9 +275,13 @@ final class NotchPanelController: NSObject {
                 self.store.isPinned = isPinned
 
                 if isPinned {
+                    if self.activeScreenID == nil {
+                        self.activateScreen(containing: self.panel.frame.center)
+                    }
                     self.ensurePanelVisible(animated: true)
                 } else {
                     self.manualPanelCenter = nil
+                    self.activeScreenID = nil
                     self.dragStartFrame = nil
                     self.dragStartMouseLocation = nil
                     self.store.isManuallyPositioned = false
@@ -342,6 +352,7 @@ final class NotchPanelController: NSObject {
 
     @objc private func screenParametersDidChange() {
         store.refresh()
+        reconcileActiveScreen()
         updateFrame(animated: true)
     }
 
@@ -366,6 +377,7 @@ final class NotchPanelController: NSObject {
     private func evaluatePointerHover() {
         guard !store.isFirstRunSetupVisible else {
             if !panel.isVisible {
+                activateScreenForCurrentPointer()
                 ensurePanelVisible(animated: false)
             }
             return
@@ -373,6 +385,9 @@ final class NotchPanelController: NSObject {
 
         guard !store.isPinned else {
             if !panel.isVisible {
+                if activeScreenID == nil {
+                    activateScreenForCurrentPointer()
+                }
                 ensurePanelVisible(animated: false)
             }
             return
@@ -395,6 +410,7 @@ final class NotchPanelController: NSObject {
 
         if shouldShow {
             if !panel.isVisible {
+                activeScreenID = screenID(for: screen)
                 showPreferredHoverState()
             } else if store.isExpanded {
                 ensurePanelVisible(animated: false)
@@ -406,6 +422,10 @@ final class NotchPanelController: NSObject {
     }
 
     private func ensurePanelVisible(animated: Bool) {
+        if activeScreenID == nil {
+            activateScreen(containing: panel.isVisible ? panel.frame.center : NSEvent.mouseLocation)
+        }
+
         guard !panel.isVisible else {
             isHidingPanel = false
             if panel.alphaValue < 1 {
@@ -502,7 +522,7 @@ final class NotchPanelController: NSObject {
             )
         }
 
-        let screen = screenForCurrentPointer()
+        let screen = activeScreen() ?? screenForCurrentPointer()
         let topPadding = targetTopPadding()
 
         let origin = CGPoint(
@@ -598,11 +618,44 @@ final class NotchPanelController: NSObject {
         return screen(containing: pointer)
     }
 
+    private func activeScreen() -> NSScreen? {
+        guard let activeScreenID else { return nil }
+        return NSScreen.screens.first { screenID(for: $0) == activeScreenID }
+    }
+
+    private func activateScreenForCurrentPointer() {
+        activeScreenID = screenID(for: screenForCurrentPointer())
+    }
+
+    private func activateScreen(containing point: CGPoint) {
+        activeScreenID = screenID(for: screen(containing: point))
+    }
+
+    private func reconcileActiveScreen() {
+        if let activeScreenID,
+           NSScreen.screens.contains(where: { screenID(for: $0) == activeScreenID }) {
+            return
+        }
+
+        if let manualPanelCenter {
+            activateScreen(containing: manualPanelCenter)
+        } else if panel.isVisible {
+            activateScreen(containing: panel.frame.center)
+        } else {
+            activeScreenID = nil
+        }
+    }
+
     private func screen(containing point: CGPoint) -> NSScreen {
         NSScreen.screens.first { $0.frame.contains(point) }
             ?? NSScreen.main
             ?? NSScreen.screens.first
             ?? NSScreen()
+    }
+
+    private func screenID(for screen: NSScreen) -> CGDirectDisplayID? {
+        let key = NSDeviceDescriptionKey("NSScreenNumber")
+        return (screen.deviceDescription[key] as? NSNumber)?.uint32Value
     }
 
     private func topHoverTriggerRect(for screen: NSScreen) -> CGRect {

@@ -4,6 +4,7 @@ struct NotchShelfRootView: View {
     @ObservedObject var store: ShelfStore
     let actions: ShelfActions
     @ObservedObject private var settings = AppSettings.shared
+    @State private var panelDragExcludedRects: [CGRect] = []
 
     var body: some View {
         let cornerRadius: CGFloat = store.isExpanded ? 28 : 21
@@ -40,10 +41,14 @@ struct NotchShelfRootView: View {
             .padding(.horizontal, 10)
             .padding(.bottom, 12)
         }
+        .coordinateSpace(name: PanelDragCoordinateSpace.name)
+        .onPreferenceChange(PanelDragExclusionPreferenceKey.self) { rects in
+            panelDragExcludedRects = rects
+        }
         .animation(.spring(response: 0.32, dampingFraction: 0.82), value: store.isExpanded)
         .animation(.easeInOut(duration: 0.22), value: store.spotifyStatus.track?.artworkURL ?? "")
         .onHover(perform: actions.setHovering)
-        .panelDragHandle(actions: actions)
+        .panelDragHandle(actions: actions, excludedRects: panelDragExcludedRects)
     }
 
     @ViewBuilder
@@ -205,6 +210,7 @@ private struct MiniHeaderButton: View {
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
         .help(label)
+        .panelDragExclusion()
     }
 }
 
@@ -284,32 +290,79 @@ private struct ExpandedSpotifyView: View {
 
 private struct PanelDragHandleModifier: ViewModifier {
     let actions: ShelfActions
+    let excludedRects: [CGRect]
     @State private var isDragging = false
+    @State private var shouldHandleDrag = false
 
     func body(content: Content) -> some View {
         content
             .contentShape(Rectangle())
             .simultaneousGesture(
-                DragGesture(minimumDistance: 3)
+                DragGesture(minimumDistance: 3, coordinateSpace: .named(PanelDragCoordinateSpace.name))
                     .onChanged { value in
                         if !isDragging {
                             isDragging = true
+                            shouldHandleDrag = !isExcludedDragStart(value.startLocation)
+                            guard shouldHandleDrag else { return }
+
                             actions.beginPanelDrag()
                         }
 
+                        guard shouldHandleDrag else { return }
                         actions.dragPanel()
                     }
                     .onEnded { _ in
+                        if shouldHandleDrag {
+                            actions.endPanelDrag()
+                        }
+
                         isDragging = false
-                        actions.endPanelDrag()
+                        shouldHandleDrag = false
                     }
             )
+    }
+
+    private func isExcludedDragStart(_ location: CGPoint) -> Bool {
+        excludedRects.contains { rect in
+            rect.insetBy(dx: -4, dy: -4).contains(location)
+        }
     }
 }
 
 private extension View {
-    func panelDragHandle(actions: ShelfActions) -> some View {
-        modifier(PanelDragHandleModifier(actions: actions))
+    func panelDragHandle(actions: ShelfActions, excludedRects: [CGRect]) -> some View {
+        modifier(PanelDragHandleModifier(actions: actions, excludedRects: excludedRects))
+    }
+}
+
+private enum PanelDragCoordinateSpace {
+    static let name = "NotchShelfPanelDragCoordinateSpace"
+}
+
+private struct PanelDragExclusionPreferenceKey: PreferenceKey {
+    static var defaultValue: [CGRect] = []
+
+    static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+private struct PanelDragExclusionModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: PanelDragExclusionPreferenceKey.self,
+                    value: [proxy.frame(in: .named(PanelDragCoordinateSpace.name))]
+                )
+            }
+        )
+    }
+}
+
+extension View {
+    func panelDragExclusion() -> some View {
+        modifier(PanelDragExclusionModifier())
     }
 }
 
@@ -364,6 +417,7 @@ private struct PinnedPlaylistButton: View {
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
         .help("Open \(playlist.name)")
+        .panelDragExclusion()
     }
 }
 
@@ -389,6 +443,7 @@ private struct MiniControlButton: View {
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
         .help(label)
+        .panelDragExclusion()
     }
 
     private var buttonBackground: Color {
@@ -422,5 +477,6 @@ private struct IconButton: View {
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
         .help(label)
+        .panelDragExclusion()
     }
 }

@@ -32,6 +32,7 @@ struct FirstRunSetupView: View {
                 .background(theme.primaryControlBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .help("Finish setup")
+                .panelDragExclusion()
             }
 
             VStack(spacing: 8) {
@@ -100,6 +101,7 @@ struct FirstRunSetupView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .panelDragExclusion()
             }
         }
         .padding(15)
@@ -213,6 +215,7 @@ private struct SetupRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .disabled(isDisabled)
             .onHover { isHovering = $0 }
+            .panelDragExclusion()
         }
         .padding(.vertical, 5)
         .padding(.horizontal, 6)
