@@ -43,6 +43,7 @@ struct NotchShelfRootView: View {
         .animation(.spring(response: 0.32, dampingFraction: 0.82), value: store.isExpanded)
         .animation(.easeInOut(duration: 0.22), value: store.spotifyStatus.track?.artworkURL ?? "")
         .onHover(perform: actions.setHovering)
+        .panelDragHandle(actions: actions)
     }
 
     @ViewBuilder
@@ -63,17 +64,7 @@ struct NotchShelfRootView: View {
 
             Color.black.opacity(0.14)
         case .black:
-            Color.black.opacity(0.92)
-
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.10),
-                    Color.black.opacity(0.06),
-                    Color.black.opacity(0.22)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            Color.black
         }
     }
 }
@@ -86,7 +77,25 @@ private struct CollapsedSpotifyPillView: View {
 
     var body: some View {
         VStack(spacing: 7) {
-            MiniExpandButton(theme: theme, action: actions.toggleExpanded)
+            HStack(spacing: 6) {
+                if store.isManuallyPositioned {
+                    MiniHeaderButton(
+                        systemName: "arrow.up.to.line",
+                        label: "Return to notch",
+                        theme: theme,
+                        action: actions.resetPanelPosition
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
+
+                MiniHeaderButton(
+                    systemName: "chevron.up",
+                    label: "Expand",
+                    theme: theme,
+                    width: store.isManuallyPositioned ? 30 : 44,
+                    action: actions.toggleExpanded
+                )
+            }
 
             if let track = store.spotifyStatus.track {
                 AlbumArtworkView(track: track)
@@ -154,6 +163,7 @@ private struct CollapsedSpotifyPillView: View {
         .background(isHovering ? theme.controlHoverBackground : Color.clear)
         .scaleEffect(isHovering ? 1.015 : 1)
         .animation(.easeInOut(duration: 0.14), value: isHovering)
+        .animation(.easeInOut(duration: 0.14), value: store.isManuallyPositioned)
         .onHover { isHovering = $0 }
     }
 
@@ -169,16 +179,19 @@ private struct CollapsedSpotifyPillView: View {
     }
 }
 
-private struct MiniExpandButton: View {
+private struct MiniHeaderButton: View {
+    let systemName: String
+    let label: String
     let theme: SpotifyTheme
+    var width: CGFloat = 30
     let action: () -> Void
     @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "chevron.up")
+            Image(systemName: systemName)
                 .font(.system(size: 9, weight: .heavy))
-                .frame(width: 44, height: 18)
+                .frame(width: width, height: 18)
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white.opacity(isHovering ? 0.98 : 0.74))
@@ -191,7 +204,7 @@ private struct MiniExpandButton: View {
         .scaleEffect(isHovering ? 1.08 : 1)
         .animation(.easeInOut(duration: 0.13), value: isHovering)
         .onHover { isHovering = $0 }
-        .help("Expand")
+        .help(label)
     }
 }
 
@@ -238,10 +251,19 @@ private struct ExpandedSpotifyView: View {
                     .font(.system(size: 14, weight: .bold))
             }
             .foregroundStyle(.white)
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if !store.isFirstRunSetupVisible {
+                if store.isManuallyPositioned {
+                    IconButton(
+                        systemName: "arrow.up.to.line",
+                        label: "Return to notch",
+                        theme: theme,
+                        action: actions.resetPanelPosition
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 IconButton(
                     systemName: "arrow.down.right.and.arrow.up.left",
                     label: "Collapse to mini player",
@@ -257,6 +279,37 @@ private struct ExpandedSpotifyView: View {
                 action: actions.togglePinned
             )
         }
+    }
+}
+
+private struct PanelDragHandleModifier: ViewModifier {
+    let actions: ShelfActions
+    @State private var isDragging = false
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 3)
+                    .onChanged { value in
+                        if !isDragging {
+                            isDragging = true
+                            actions.beginPanelDrag()
+                        }
+
+                        actions.dragPanel()
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                        actions.endPanelDrag()
+                    }
+            )
+    }
+}
+
+private extension View {
+    func panelDragHandle(actions: ShelfActions) -> some View {
+        modifier(PanelDragHandleModifier(actions: actions))
     }
 }
 

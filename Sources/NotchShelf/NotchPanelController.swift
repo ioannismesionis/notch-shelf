@@ -15,6 +15,9 @@ final class NotchPanelController: NSObject {
     private var isHidingPanel = false
     private var suppressAutoShowUntilPointerExit = false
     private var shouldExpandOnNextHover = true
+    private var manualPanelCenter: CGPoint?
+    private var dragStartFrame: CGRect?
+    private var dragStartMouseLocation: CGPoint?
 
     private let collapsedSize = CGSize(width: 180, height: 162)
     private let expandedSize = CGSize(width: 580, height: 204)
@@ -121,14 +124,68 @@ final class NotchPanelController: NSObject {
         if store.isPinned {
             expand()
         } else {
+            manualPanelCenter = nil
+            dragStartFrame = nil
+            dragStartMouseLocation = nil
+            store.isManuallyPositioned = false
             evaluatePointerHover()
         }
+    }
+
+    func beginPanelDrag() {
+        guard panel.isVisible else { return }
+
+        collapseTimer?.invalidate()
+        dragStartFrame = panel.frame
+        dragStartMouseLocation = NSEvent.mouseLocation
+        manualPanelCenter = panel.frame.center
+
+        if !store.isPinned {
+            store.isPinned = true
+        }
+    }
+
+    func dragPanel() {
+        guard let dragStartFrame,
+              let dragStartMouseLocation else { return }
+
+        let mouseLocation = NSEvent.mouseLocation
+        let proposedFrame = dragStartFrame.offsetBy(
+            dx: mouseLocation.x - dragStartMouseLocation.x,
+            dy: mouseLocation.y - dragStartMouseLocation.y
+        )
+        let screen = screen(containing: mouseLocation)
+        let frame = clampedFrame(proposedFrame, on: screen)
+
+        manualPanelCenter = frame.center
+        store.isManuallyPositioned = true
+        panel.setFrame(frame, display: true)
+    }
+
+    func endPanelDrag() {
+        dragStartFrame = nil
+        dragStartMouseLocation = nil
+
+        if !settings.startPinned {
+            settings.startPinned = true
+        }
+    }
+
+    func resetPanelPosition() {
+        collapseTimer?.invalidate()
+        dragStartFrame = nil
+        dragStartMouseLocation = nil
+        manualPanelCenter = nil
+        store.isManuallyPositioned = false
+        ensurePanelVisible(animated: true)
     }
 
     private func configurePanel() {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
+        panel.isMovable = false
+        panel.isMovableByWindowBackground = false
         panel.level = .statusBar
         panel.collectionBehavior = [
             .canJoinAllSpaces,
@@ -139,6 +196,10 @@ final class NotchPanelController: NSObject {
 
         let actions = ShelfActions(
             setHovering: { [weak self] isHovering in self?.setHovering(isHovering) },
+            beginPanelDrag: { [weak self] in self?.beginPanelDrag() },
+            dragPanel: { [weak self] in self?.dragPanel() },
+            endPanelDrag: { [weak self] in self?.endPanelDrag() },
+            resetPanelPosition: { [weak self] in self?.resetPanelPosition() },
             toggleExpanded: { [weak self] in self?.toggleExpanded() },
             togglePinned: { [weak self] in self?.togglePinned() },
             spotifyPlayPause: { [weak self] in self?.store.spotifyPlayPause() },
@@ -199,23 +260,49 @@ final class NotchPanelController: NSObject {
             }
             .store(in: &cancellables)
 
-        settings.objectWillChange
-            .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    guard let self else { return }
+        settings.$startPinned
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] isPinned in
+                guard let self else { return }
 
-                    self.store.isPinned = self.settings.startPinned
-                    self.store.refreshSetupStatus()
-                    self.restartRefreshTimer()
+                self.store.isPinned = isPinned
 
-                    if self.store.isPinned || self.store.isFirstRunSetupVisible {
-                        self.expand()
-                    } else {
-                        self.evaluatePointerHover()
-                    }
-
-                    self.updateFrame(animated: true)
+                if isPinned {
+                    self.ensurePanelVisible(animated: true)
+                } else {
+                    self.manualPanelCenter = nil
+                    self.dragStartFrame = nil
+                    self.dragStartMouseLocation = nil
+                    self.store.isManuallyPositioned = false
+                    self.evaluatePointerHover()
                 }
+            }
+            .store(in: &cancellables)
+
+        settings.$refreshInterval
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.restartRefreshTimer()
+            }
+            .store(in: &cancellables)
+
+        settings.$spotifyClientID
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.store.refreshSetupStatus()
+            }
+            .store(in: &cancellables)
+
+        settings.$pinnedPlaylists
+            .dropFirst()
+            .sink { [weak self] playlists in
+                guard let self else { return }
+
+                self.store.pinnedPlaylists = playlists
+                self.updateFrame(animated: true)
             }
             .store(in: &cancellables)
     }
@@ -259,6 +346,8 @@ final class NotchPanelController: NSObject {
     }
 
     private func updateFrame(animated: Bool) {
+        guard dragStartFrame == nil else { return }
+
         let frame = targetFrame()
 
         if animated {
@@ -329,7 +418,7 @@ final class NotchPanelController: NSObject {
         isHidingPanel = false
         let frame = targetFrame()
         panel.setFrame(animated ? notchSeedFrame(from: frame) : frame, display: true)
-        panel.alphaValue = animated ? 0.96 : 1
+        panel.alphaValue = 1
         panel.orderFrontRegardless()
 
         guard animated else { return }
@@ -399,6 +488,20 @@ final class NotchPanelController: NSObject {
 
     private func targetFrame() -> CGRect {
         let size = targetSize()
+
+        if let manualPanelCenter {
+            let screen = screen(containing: manualPanelCenter)
+            return clampedFrame(
+                CGRect(
+                    x: manualPanelCenter.x - size.width / 2,
+                    y: manualPanelCenter.y - size.height / 2,
+                    width: size.width,
+                    height: size.height
+                ),
+                on: screen
+            )
+        }
+
         let screen = screenForCurrentPointer()
         let topPadding = targetTopPadding()
 
@@ -408,6 +511,34 @@ final class NotchPanelController: NSObject {
         )
 
         return CGRect(origin: origin, size: size)
+    }
+
+    private func clampedFrame(_ frame: CGRect, on screen: NSScreen) -> CGRect {
+        let bounds = screen.visibleFrame.insetBy(dx: 8, dy: 8)
+        let x = clamped(
+            frame.origin.x,
+            lowerBound: bounds.minX,
+            upperBound: bounds.maxX - frame.width,
+            fallback: bounds.midX - frame.width / 2
+        )
+        let y = clamped(
+            frame.origin.y,
+            lowerBound: bounds.minY,
+            upperBound: bounds.maxY - frame.height,
+            fallback: bounds.midY - frame.height / 2
+        )
+
+        return CGRect(origin: CGPoint(x: x, y: y), size: frame.size)
+    }
+
+    private func clamped(
+        _ value: CGFloat,
+        lowerBound: CGFloat,
+        upperBound: CGFloat,
+        fallback: CGFloat
+    ) -> CGFloat {
+        guard lowerBound <= upperBound else { return fallback }
+        return min(max(value, lowerBound), upperBound)
     }
 
     private func targetTopPadding() -> CGFloat {
@@ -487,4 +618,10 @@ final class NotchPanelController: NSObject {
 final class NotchPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+}
+
+private extension CGRect {
+    var center: CGPoint {
+        CGPoint(x: midX, y: midY)
+    }
 }

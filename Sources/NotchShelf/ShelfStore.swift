@@ -11,6 +11,7 @@ final class ShelfStore: ObservableObject {
     @Published var isSpotifyAppInstalled = false
     @Published var launchAtLoginStatusText = LaunchAtLoginController.statusText
     @Published var pinnedPlaylists: [SpotifyPlaylist]
+    @Published var isManuallyPositioned = false
 
     private let spotifyController = SpotifyController()
     private let spotifyWebAPIClient = SpotifyWebAPIClient()

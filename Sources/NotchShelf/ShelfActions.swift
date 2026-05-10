@@ -1,5 +1,9 @@
 struct ShelfActions {
     let setHovering: (Bool) -> Void
+    let beginPanelDrag: () -> Void
+    let dragPanel: () -> Void
+    let endPanelDrag: () -> Void
+    let resetPanelPosition: () -> Void
     let toggleExpanded: () -> Void
     let togglePinned: () -> Void
     let spotifyPlayPause: () -> Void
